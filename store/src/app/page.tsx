@@ -4,7 +4,7 @@ import { PrismaClient } from "@prisma/client";
 export const instant = false;
 const prisma = new PrismaClient();
 
-// قائمة الأقسام (للديكور حالياً)
+// قائمة الأقسام (للتصميم)
 const categories = [
   "أجهزة الكترونية", 
     "موضة نسائية", 

@@ -1,3 +1,0 @@
-{
-  "buildCommand": "npm install tailwindcss postcss autoprefixer && prisma generate && next build"
-}

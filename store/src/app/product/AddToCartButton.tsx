@@ -2,41 +2,35 @@
 
 import { useCart } from "../context/CartContext";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 export default function AddToCartButton({ product }: { product: any }) {
   const { addToCart } = useCart();
-    const [showToast, setShowToast] = useState(false);
+    const [quantity, setQuantity] = useState(1);
+      const router = useRouter();
 
-      const handleAdd = () => {
-          addToCart({
-                id: product.id,
-                      name: product.name,
-                            price: product.price,
-                                  imageUrl: product.imageUrl || "",
-                                        quantity: 1,
-                                            });
-                                                
-                                                    // إظهار الرسالة لمدة ثانيتين
-                                                        setShowToast(true);
-                                                            setTimeout(() => setShowToast(false), 2000);
-                                                              };
+        const handleAdd = () => {
+            addToCart({ ...product, quantity });
+                router.push("/cart"); // بنوديه عالسلة مباشرة بعد الإضافة
+                  };
 
-                                                                return (
-                                                                    <>
-                                                                          <button
-                                                                                  onClick={handleAdd}
-                                                                                          className="w-full bg-black text-white font-bold py-3 rounded-lg hover:bg-gray-800 transition-colors mt-6"
-                                                                                                >
-                                                                                                        أضف للسلة
-                                                                                                              </button>
+                    return (
+                        <div className="space-y-4">
+                              <div className="flex items-center gap-4">
+                                      <span className="text-sm font-bold text-gray-700">الكمية:</span>
+                                              <div className="flex items-center border border-gray-300 rounded-lg overflow-hidden">
+                                                        <button onClick={() => setQuantity(Math.max(1, quantity - 1))} className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-lg font-bold">-</button>
+                                                                  <span className="w-12 text-center font-bold text-lg">{quantity}</span>
+                                                                            <button onClick={() => setQuantity(quantity + 1)} className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-lg font-bold">+</button>
+                                                                                    </div>
+                                                                                          </div>
 
-                                                                                                                    {/* الرسالة الأنيقة */}
-                                                                                                                          {showToast && (
-                                                                                                                                  <div className="fixed bottom-10 left-1/2 -translate-x-1/2 bg-green-500 text-white px-6 py-3 rounded-full shadow-lg transition-all duration-300 z-50 flex items-center gap-2">
-                                                                                                                                            <span>✓</span>
-                                                                                                                                                      <span>تمت إضافة المنتج للسلة</span>
-                                                                                                                                                              </div>
-                                                                                                                                                                    )}
-                                                                                                                                                                        </>
-                                                                                                                                                                          );
-                                                                                                                                                                          }
+                                                                                                <button
+                                                                                                        onClick={handleAdd}
+                                                                                                                className="w-full bg-red-600 text-white font-bold text-lg py-4 rounded-xl hover:bg-red-700 transition-colors shadow-lg shadow-red-600/30 flex items-center justify-center gap-2"
+                                                                                                                      >
+                                                                                                                              <span>🛒</span> أضف للسلة
+                                                                                                                                    </button>
+                                                                                                                                        </div>
+                                                                                                                                          );
+                                                                                                                                          }

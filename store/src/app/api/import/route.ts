@@ -2,8 +2,6 @@ import { NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
 import { parse } from 'csv-parse/sync';
 
-export const dynamic = 'force-dynamic'; // السطر السحري
-
 const prisma = new PrismaClient();
 
 export async function POST(req: Request) {

@@ -1,8 +1,8 @@
 import Link from "next/link";
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "@/lib/prisma";
 
 export const instant = false;
-const prisma = new PrismaClient();
+
 
 const categories = ["أجهزة الكترونية", "موضة نسائية", "موضة رجالية", "هواتف وإكسسوارات", "أدوات منزلية", "عطور", "ساعات", "رياضة", "ألعاب"];
 

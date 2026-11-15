@@ -27,10 +27,9 @@ model Order {
           address      String
             total        Int
               createdAt    DateTime    @default(now())
-                // هدول السطرين الجداد لربط الطلب بالزبون (اختياري عشان الزبون يقدر يطلب كضيف)
-                  userId       String?
-                    user         User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
-                      items        OrderItem[]
+                userId       String?
+                  user         User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
+                    items        OrderItem[]
 }
 
 model OrderItem {
@@ -45,7 +44,7 @@ model OrderItem {
 
 model Settings {
     id             String @id @default("global")
-      siteName       String @default("Ali-Boss")
+      siteName       String @alias("Ali-Boss")
         heroTitle      String @default("تخفيضات الميجا سيل!")
           heroSubtitle   String @default("خصومات تصل لـ 70% | توصيل سريع لكل لبنان")
             heroBtnText    String @default("تسوق الآن")
@@ -60,6 +59,5 @@ model User {
         email     String   @unique
           password  String
             createdAt DateTime @default(now())
-              orders    Order[]  // هون ربطنا الزبون بالأوردرات تبعه
-}
+              orders    Order[]
 }

@@ -2,8 +2,6 @@ import { NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/supabase/server'
 import { PrismaClient } from '@prisma/client'
 
-export const dynamic = 'force-dynamic'
-
 const prisma = new PrismaClient()
 
 export async function GET(request: Request) {
@@ -23,7 +21,7 @@ export async function GET(request: Request) {
           data: {
             name: user.user_metadata.full_name || user.user_metadata.name || 'Google User',
             email: user.email,
-          password: 'google-oauth-login',
+            password: 'google-oauth-login',
           }
         })
       }

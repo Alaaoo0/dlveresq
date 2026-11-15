@@ -3,6 +3,8 @@ import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import { cookies } from 'next/headers';
 
+export const dynamic = 'force-dynamic';
+
 const prisma = new PrismaClient();
 
 export async function POST(req: Request) {

@@ -27,7 +27,10 @@ model Order {
           address      String
             total        Int
               createdAt    DateTime    @default(now())
-                items        OrderItem[]
+                // هدول السطرين الجداد لربط الطلب بالزبون (اختياري عشان الزبون يقدر يطلب كضيف)
+                  userId       String?
+                    user         User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
+                      items        OrderItem[]
 }
 
 model OrderItem {
@@ -57,4 +60,6 @@ model User {
         email     String   @unique
           password  String
             createdAt DateTime @default(now())
+              orders    Order[]  // هون ربطنا الزبون بالأوردرات تبعه
+}
 }

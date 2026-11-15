@@ -49,4 +49,3 @@ model Settings {
                 whatsapp       String @default("96170000000")
                   email          String @default("info@aliboss.com")
 }
-}

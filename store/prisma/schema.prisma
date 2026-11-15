@@ -22,15 +22,18 @@ model Product {
 }
 
 model Order {
-    id           String      @id @default(cuid())
-      customerName String
-        phone        String
-          address      String
-            total        Int
-              createdAt    DateTime    @default(now())
-                userId       String?
-                  user         User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
-                    items        OrderItem[]
+    id             String      @id @default(cuid())
+      customerName   String
+        phone          String
+          address        String
+            total          Int         // المجموع النهائي بعد الخصم
+              couponId       String?
+                coupon         Coupon?     @relation(fields: [couponId], references: [id])
+                  discountAmount Float       @default(0) // مبلغ الخصم
+                    createdAt      DateTime    @default(now())
+                      userId         String?
+                        user           User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
+                          items          OrderItem[]
 }
 
 model OrderItem {
@@ -41,6 +44,21 @@ model OrderItem {
             price     Int
               order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
                 product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+}
+
+model Coupon {
+    id            String      @id @default(cuid())
+      code          String      @unique
+        type          CouponType
+          value         Float
+            minOrderValue Float       @default(0)
+              maxUses       Int?
+                usedCount     Int         @default(0)
+                  isActive      Boolean     @default(true)
+                    expiresAt     DateTime?
+                      createdAt     DateTime    @default(now())
+                        updatedAt     DateTime    @updatedAt
+                          orders        Order[]
 }
 
 model Settings {
@@ -61,4 +79,9 @@ model User {
           password  String
             createdAt DateTime @default(now())
               orders    Order[]
+}
+
+enum CouponType {
+    PERCENTAGE
+      FIXED
 }

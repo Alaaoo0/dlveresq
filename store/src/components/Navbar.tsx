@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useCart } from "../app/context/CartContext";
-import { useWishlist } from "../app/context/WishlistContext";
+import { useWishlist } from "../context/WishlistContext"; // هون صلحنا المسار
 import { useEffect, useState } from "react";
 
 export default function Navbar({ siteName }: { siteName: string }) {

@@ -2,8 +2,6 @@ import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { PrismaClient } from '@prisma/client';
 
-export const dynamic = 'force-dynamic'; // هالسطر بيمنع الكاش
-
 const prisma = new PrismaClient();
 
 export async function GET() {

@@ -23,19 +23,20 @@ model Product {
 }
 
 model Order {
-  id             String      @id @default(cuid())
-  customerName   String
-  phone          String
-  address        String
-  total          Int
-  status         String      @default("pending") // حالة الطلب
-  couponId       String?
-  coupon         Coupon?     @relation(fields: [couponId], references: [id])
-  discountAmount Float       @default(0)
-  createdAt      DateTime    @default(now())
-  userId         String?
-  user           User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
-  items          OrderItem[]
+  id                String      @id @default(cuid())
+  customerName      String
+  phone             String
+  address           String
+  total             Int
+  status            String      @default("pending")
+  customerConfirmed Boolean     @default(false) // هاد الحقل الجديد
+  couponId          String?
+  coupon            Coupon?     @relation(fields: [couponId], references: [id])
+  discountAmount    Float       @default(0)
+  createdAt         DateTime    @default(now())
+  userId            String?
+  user              User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
+  items             OrderItem[]
 }
 
 model OrderItem {

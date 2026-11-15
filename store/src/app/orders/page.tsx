@@ -6,6 +6,8 @@ import { useRouter } from "next/navigation";
 export default function MyOrdersPage() {
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [confirming, setConfirming] = useState<string | null>(null); // لحالة التحميل
+  const [justConfirmed, setJustConfirmed] = useState<string | null>(null); // عشان نطلع الصح
   const router = useRouter();
 
   useEffect(() => {
@@ -26,17 +28,23 @@ export default function MyOrdersPage() {
   const handleConfirmReceipt = async (orderId: string) => {
     if (!confirm("هل أنت متأكد أنك استلمت هذا الطلب؟")) return;
     
+    setConfirming(orderId);
     try {
       const res = await fetch(`/api/user/orders/${orderId}`, { method: "PUT" });
       if (res.ok) {
-        // تحديث الواجهة فوراً
-        setOrders(orders.map(o => o.id === orderId ? { ...o, status: 'delivered' } : o));
+        // بنطلع علامة الصح لمدة ثانية ونص
+        setJustConfirmed(orderId);
+        setTimeout(() => {
+          setOrders(orders.map(o => o.id === orderId ? { ...o, customerConfirmed: true } : o));
+          setJustConfirmed(null);
+        }, 1500);
       } else {
         alert("حدث خطأ، حاول مرة أخرى.");
       }
     } catch (error) {
       alert("خطأ في الاتصال بالسيرفر.");
     }
+    setConfirming(null);
   };
 
   const getStatusBadge = (status: string) => {
@@ -53,7 +61,8 @@ export default function MyOrdersPage() {
   return (
     <main className="max-w-4xl mx-auto p-4 md:p-6 mt-8 min-h-screen" dir="rtl">
       <div className="flex items-center justify-between mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">طلباتي</h1>
+        {/* هون خليت طلباتي أحمر */}
+        <h1 className="text-3xl font-bold text-red-600">طلباتي</h1>
         <Link href="/" className="text-sm text-gray-500 hover:text-red-500 font-semibold">← العودة للرئيسية</Link>
       </div>
 
@@ -95,15 +104,31 @@ export default function MyOrdersPage() {
                   </div>
                 ))}
 
-                {/* هون زر تم الاستلام للزبون */}
-                {order.status !== 'delivered' && (
+                {/* هون الزر الجديد */}
+                {!order.customerConfirmed && order.status !== 'pending' && (
                   <div className="mt-4 pt-4 border-t flex justify-end">
-                    <button 
-                      onClick={() => handleConfirmReceipt(order.id)}
-                      className="bg-green-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-green-700 transition-colors shadow-sm flex items-center gap-2"
-                    >
-                      <span>✅</span> تم استلام الطلب
-                    </button>
+                    {justConfirmed === order.id ? (
+                      <span className="text-green-600 font-bold flex items-center gap-2 animate-bounce">
+                        <span>✅</span> تم التأكيد
+                      </span>
+                    ) : (
+                      <button 
+                        onClick={() => handleConfirmReceipt(order.id)}
+                        disabled={confirming === order.id}
+                        className="bg-gray-100 text-gray-800 border border-gray-300 px-6 py-2 rounded-lg font-bold hover:bg-gray-200 transition-colors disabled:opacity-50"
+                      >
+                        {confirming === order.id ? "جاري..." : "تم استلام الطلب"}
+                      </button>
+                    )}
+                  </div>
+                )}
+                
+                {/* إذا الزبون أكد من قبل */}
+                {order.customerConfirmed && (
+                  <div className="mt-4 pt-4 border-t flex justify-end">
+                     <span className="text-green-600 font-bold flex items-center gap-1 text-sm bg-green-50 px-3 py-1 rounded-full">
+                        <span>✅</span> لقد قمت بتأكيد استلام هذا الطلب
+                      </span>
                   </div>
                 )}
               </div>

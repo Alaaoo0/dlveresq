@@ -12,16 +12,15 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
       return NextResponse.json({ message: 'يجب تسجيل الدخول' }, { status: 401 });
     }
 
-    // بنتأكد إنه هالطلب إله هو شخصياً
     const order = await prisma.order.findUnique({ where: { id } });
     if (!order || order.userId !== userId) {
       return NextResponse.json({ message: 'غير مصرح لك' }, { status: 403 });
     }
 
-    // بنغير الحالة لتم التوصيل
+    // بنغير حالة التأكيد بدل الحالة الأساسية
     const updatedOrder = await prisma.order.update({
       where: { id },
-      data: { status: 'delivered' },
+      data: { customerConfirmed: true, status: 'delivered' }, // بنغير الاتنين عشان تظبط
     });
 
     return NextResponse.json(updatedOrder);

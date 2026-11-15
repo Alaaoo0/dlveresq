@@ -19,6 +19,7 @@ model Product {
                     category    String   @default("أجهزة الكترونية")
                       createdAt   DateTime @default(now())
                         orderItems  OrderItem[]
+                          reviews     Review[]
 }
 
 model Order {
@@ -26,10 +27,10 @@ model Order {
       customerName   String
         phone          String
           address        String
-            total          Int         // المجموع النهائي بعد الخصم
+            total          Int
               couponId       String?
                 coupon         Coupon?     @relation(fields: [couponId], references: [id])
-                  discountAmount Float       @default(0) // مبلغ الخصم
+                  discountAmount Float       @default(0)
                     createdAt      DateTime    @default(now())
                       userId         String?
                         user           User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
@@ -79,6 +80,18 @@ model User {
           password  String
             createdAt DateTime @default(now())
               orders    Order[]
+                reviews   Review[]
+}
+
+model Review {
+    id        String   @id @default(cuid())
+      rating    Int      @default(5)
+        comment   String?
+          productId String
+            product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+              userId    String?
+                user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+                  createdAt DateTime @default(now())
 }
 
 enum CouponType {

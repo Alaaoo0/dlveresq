@@ -1,9 +1,7 @@
 import { NextResponse } from 'next/server';
-import { prisma } from "@/lib/prisma";
+import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
 import { cookies } from 'next/headers';
-
-
 
 export async function POST(req: Request) {
   try {
@@ -16,7 +14,10 @@ export async function POST(req: Request) {
 
     const cookieStore = await cookies();
     cookieStore.set('user_session', user.id, {
-      httpOnly: true, secure: process.env.NODE_ENV === 'production', maxAge: 60 * 60 * 24 * 7, path: '/',
+      httpOnly: true, 
+      secure: process.env.NODE_ENV === 'production', 
+      maxAge: 60 * 60 * 24 * 7, 
+      path: '/',
     });
 
     return NextResponse.json({ message: 'تم تسجيل الدخول' });

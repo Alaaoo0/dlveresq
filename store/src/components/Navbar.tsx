@@ -15,7 +15,7 @@ export default function Navbar({ siteName }: { siteName: string }) {
   
   useEffect(() => {
     setMounted(true);
-    // هون ضفنا cache: 'no-store' عشان ما يخزن الجواب
+    // no-store عشان نمنع الكاش
     fetch("/api/auth/me", { cache: 'no-store' })
       .then(res => res.json())
       .then(data => setUser(data.user));
@@ -32,7 +32,7 @@ export default function Navbar({ siteName }: { siteName: string }) {
   const handleLogout = async () => {
     await fetch("/api/auth/logout", { method: "POST" });
     setUser(null); 
-    window.location.href = "/"; // تحديث الصفحة عند الخروج
+    window.location.href = "/"; // تحديث الصفحة
   };
 
   return (

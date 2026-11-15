@@ -2,10 +2,12 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { CartProvider } from "./context/CartContext";
-import { WishlistProvider } from "../context/WishlistContext"; // هون صلحنا المسار
+import { WishlistProvider } from "../context/WishlistContext";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import { PrismaClient } from "@prisma/client";
+
+export const instant = false; // هالسطر بيمنع مشاكل البناء
 
 const prisma = new PrismaClient();
 const inter = Inter({ subsets: ["latin"] });

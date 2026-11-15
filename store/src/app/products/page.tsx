@@ -3,7 +3,6 @@ import { prisma } from "@/lib/prisma";
 
 export const instant = false;
 
-
 export default async function ProductsPage({ searchParams }: { searchParams: Promise<{ category?: string }> }) {
   const { category } = await searchParams;
 
@@ -29,20 +28,28 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
         </div>
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
-          {products.map((product) => (
-            <Link key={product.id} href={`/product?slug=${product.slug}`} className="group block bg-white rounded-lg overflow-hidden hover:shadow-xl transition-all duration-300 border border-gray-100 relative">
-              <div className="relative w-full h-40 sm:h-48 bg-gray-50 overflow-hidden">
-                {product.imageUrl && <img src={product.imageUrl} alt={product.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />}
-                <div className="absolute top-0 left-0 bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-br-lg z-10 shadow-sm">خصم 15%</div>
-              </div>
-              <div className="p-2 sm:p-3">
-                <h2 className="text-xs sm:text-sm font-medium text-gray-800 line-clamp-2 leading-tight h-9">{product.name}</h2>
-                <div className="mt-1 flex items-baseline gap-1 flex-wrap">
-                  <p className="text-base sm:text-lg font-black text-red-600">${(product.price / 100).toFixed(2)}</p>
+          {products.map((product) => {
+            const isOutOfStock = product.stock <= 0;
+            return (
+              <Link key={product.id} href={`/product?slug=${product.slug}`} className="group block bg-white rounded-lg overflow-hidden hover:shadow-xl transition-all duration-300 border border-gray-100 relative">
+                <div className="relative w-full h-40 sm:h-48 bg-gray-50 overflow-hidden">
+                  {product.imageUrl && <img src={product.imageUrl} alt={product.name} className={`w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ${isOutOfStock ? 'opacity-50' : ''}`} />}
+                  <div className="absolute top-0 left-0 bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-br-lg z-10 shadow-sm">خصم 15%</div>
+                  {isOutOfStock && (
+                    <div className="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center z-10">
+                      <span className="bg-red-600 text-white px-3 py-1 rounded-full text-xs font-bold">نفدت الكمية</span>
+                    </div>
+                  )}
                 </div>
-              </div>
-            </Link>
-          ))}
+                <div className="p-2 sm:p-3">
+                  <h2 className="text-xs sm:text-sm font-medium text-gray-800 line-clamp-2 leading-tight h-9">{product.name}</h2>
+                  <div className="mt-1 flex items-baseline gap-1 flex-wrap">
+                    <p className="text-base sm:text-lg font-black text-red-600">${(product.price / 100).toFixed(2)}</p>
+                  </div>
+                </div>
+              </Link>
+            );
+          })}
         </div>
       )}
     </main>

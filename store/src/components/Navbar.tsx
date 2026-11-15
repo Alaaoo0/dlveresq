@@ -15,7 +15,6 @@ export default function Navbar({ siteName }: { siteName: string }) {
   
   useEffect(() => {
     setMounted(true);
-    // no-store عشان نمنع الكاش
     fetch("/api/auth/me", { cache: 'no-store' })
       .then(res => res.json())
       .then(data => setUser(data.user));
@@ -32,13 +31,16 @@ export default function Navbar({ siteName }: { siteName: string }) {
   const handleLogout = async () => {
     await fetch("/api/auth/logout", { method: "POST" });
     setUser(null); 
-    window.location.href = "/"; // تحديث الصفحة
+    window.location.href = "/"; 
   };
 
   return (
     <header className="bg-white shadow-sm sticky top-0 z-50 border-b border-gray-200">
       <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
-        <Link href="/" className="text-2xl font-black text-red-600 tracking-tighter hidden sm:block">{siteName}</Link>
+        
+        <Link href="/" className="text-2xl font-black text-red-600 tracking-tighter block cursor-pointer">
+          {siteName}
+        </Link>
         
         <form onSubmit={handleSearch} className="flex-1 max-w-xl flex">
           <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="ابحث عن منتج..." className="w-full border-2 border-red-600 rounded-l-full px-4 py-2 outline-none text-black text-sm" />

@@ -44,7 +44,7 @@ model OrderItem {
 
 model Settings {
     id             String @id @default("global")
-      siteName       String @alias("Ali-Boss")
+      siteName       String @default("Ali-Boss")
         heroTitle      String @default("تخفيضات الميجا سيل!")
           heroSubtitle   String @default("خصومات تصل لـ 70% | توصيل سريع لكل لبنان")
             heroBtnText    String @default("تسوق الآن")

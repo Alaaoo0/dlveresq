@@ -10,20 +10,18 @@ export async function GET() {
 
     const productCount = await prisma.product.count();
 
-    const recentOrders = await prisma.order.findMany({
-      take: 5,
+    // هون جبنا كل الطلبات عشان صفحة الإدارة
+    const allOrders = await prisma.order.findMany({
       orderBy: { createdAt: 'desc' },
-      include: { items: true }
     });
 
     return NextResponse.json({
       totalSales: orderStats._sum.total || 0,
       totalOrders: orderStats._count || 0,
       totalProducts: productCount,
-      recentOrders,
+      recentOrders: allOrders, // رح نعرضهن كلهم
     });
   } catch (error) {
-    console.error("Stats API Error:", error);
     return NextResponse.json({ message: 'فشل جلب الإحصائيات' }, { status: 500 });
   }
 }

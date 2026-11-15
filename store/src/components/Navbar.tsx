@@ -17,7 +17,8 @@ export default function Navbar({ siteName }: { siteName: string }) {
     setMounted(true);
     fetch("/api/auth/me", { cache: 'no-store' })
       .then(res => res.json())
-      .then(data => setUser(data.user));
+      .then(data => setUser(data.user))
+      .catch(() => setUser(null));
   }, []);
 
   const totalItems = cart.reduce((total: number, item: any) => total + item.quantity, 0);

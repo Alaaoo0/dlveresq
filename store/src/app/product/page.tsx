@@ -3,10 +3,10 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import AddToCartButton from "./AddToCartButton";
 import { WishlistButton } from "../../components/WishlistButton";
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "@/lib/prisma";
 
 export const instant = false;
-const prisma = new PrismaClient();
+
 
 async function ProductDetails({ searchParams }: { searchParams: Promise<{ slug?: string }> }) {
   const params = await searchParams;

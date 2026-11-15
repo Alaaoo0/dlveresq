@@ -1,8 +1,8 @@
 import Link from "next/link";
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "@/lib/prisma";
 
 export const instant = false;
-const prisma = new PrismaClient();
+
 
 export default async function ProductsPage() {
   const products = await prisma.product.findMany({

@@ -1,20 +1,15 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
-export const dynamic = 'force-dynamic';
-
 export async function GET() {
   try {
-    // إجمالي المبيعات وإجمالي الطلبات
     const orderStats = await prisma.order.aggregate({
       _sum: { total: true },
       _count: true,
     });
 
-    // عدد المنتجات
     const productCount = await prisma.product.count();
 
-    // آخر 5 طلبات
     const recentOrders = await prisma.order.findMany({
       take: 5,
       orderBy: { createdAt: 'desc' },

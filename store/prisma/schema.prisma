@@ -50,3 +50,11 @@ model Settings {
                 whatsapp       String @default("96170000000")
                   email          String @default("info@aliboss.com")
 }
+
+model User {
+    id        String   @id @default(cuid())
+      name      String
+        email     String   @unique
+          password  String
+            createdAt DateTime @default(now())
+}

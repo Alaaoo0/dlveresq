@@ -6,15 +6,16 @@ export default function AdminOrdersPage() {
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const fetchOrders = () => {
-    fetch("/api/admin/stats") // بنستخدم نفس الـ API تبع الإحصائيات لجلب آخر الطلبات
-      .then(res => res.json())
-      .then(data => {
-        // هون لازم نجيب كل الطلبات مو بس آخر 5، فمنعدل الـ API أو منعمل واحد جديد
-        fetch("/api/admin/all-orders")
-          .then(res => res.json())
-          .then(allData => { setOrders(allData); setLoading(false); });
-      });
+  const fetchOrders = async () => {
+    try {
+      const res = await fetch("/api/admin/all-orders", { cache: 'no-store' });
+      const data = await res.json();
+      setOrders(data);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => { fetchOrders(); }, []);
@@ -25,7 +26,6 @@ export default function AdminOrdersPage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ status: newStatus }),
     });
-    // تحديث الواجهة
     setOrders(orders.map(o => o.id === orderId ? { ...o, status: newStatus } : o));
   };
 

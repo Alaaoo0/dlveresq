@@ -7,7 +7,7 @@ import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import { PrismaClient } from "@prisma/client";
 
-export const instant = false; // هالسطر بيمنع مشاكل البناء
+export const instant = false;
 
 const prisma = new PrismaClient();
 const inter = Inter({ subsets: ["latin"] });

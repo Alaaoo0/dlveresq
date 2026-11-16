@@ -108,3 +108,8 @@ enum CouponType {
     PERCENTAGE
       FIXED
 }
+model Category {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  createdAt DateTime @default(now())
+}

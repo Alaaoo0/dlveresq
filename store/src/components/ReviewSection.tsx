@@ -5,11 +5,12 @@ export default function ReviewSection({ productId }: { productId: string }) {
   const [reviews, setReviews] = useState<any[]>([]);
   const [rating, setRating] = useState(5);
   const [comment, setComment] = useState("");
-  const [imageUrl, setImageUrl] = useState(""); // ✅ حالة الصورة
+  const [imageUrl, setImageUrl] = useState("");
   const [uploading, setUploading] = useState(false);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const [isAdmin, setIsAdmin] = useState(false); // ✅ حالة الأدمن
 
   const fetchReviews = () => {
     fetch(`/api/reviews?productId=${productId}`)
@@ -17,9 +18,14 @@ export default function ReviewSection({ productId }: { productId: string }) {
       .then(data => { setReviews(data); setLoading(false); });
   };
 
-  useEffect(() => { fetchReviews(); }, [productId]);
+  useEffect(() => {
+    fetchReviews();
+    // التحقق من الكوكي تبع الأدمن
+    if (document.cookie.includes('admin_session=true')) {
+      setIsAdmin(true);
+    }
+  }, [productId]);
 
-  // ✅ دالة رفع الصورة
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -62,6 +68,22 @@ export default function ReviewSection({ productId }: { productId: string }) {
     }
   };
 
+  // ✅ دالة حذف التقييم (للأدمن فقط)
+  const handleDeleteReview = async (reviewId: string) => {
+    if (!confirm("متأكد إنك بدك تحذف هالتقييم؟")) return;
+    
+    try {
+      const res = await fetch(`/api/admin/reviews/${reviewId}`, { method: "DELETE" });
+      if (res.ok) {
+        setReviews(reviews.filter(r => r.id !== reviewId));
+      } else {
+        alert("فشل حذف التقييم");
+      }
+    } catch (err) {
+      alert("صار خطأ بالاتصال");
+    }
+  };
+
   return (
     <div className="mt-12 bg-white rounded-xl shadow-sm p-6 border border-gray-100">
       <h2 className="text-2xl font-bold mb-6 text-gray-900">التقييمات والمراجعات</h2>
@@ -78,7 +100,6 @@ export default function ReviewSection({ productId }: { productId: string }) {
         </div>
         <textarea value={comment} onChange={(e) => setComment(e.target.value)} placeholder="اكتب مراجعتك هنا (اختياري)..." className="w-full border p-3 rounded text-black mb-3" rows={2}></textarea>
         
-        {/* ✅ حقل رفع الصورة */}
         <div className="mb-3 flex items-center gap-3">
           <label className="bg-gray-200 text-gray-700 px-4 py-2 rounded cursor-pointer hover:bg-gray-300 font-bold text-sm">
             {uploading ? "جاري الرفع..." : "📸 إرفاق صورة (اختياري)"}
@@ -105,9 +126,18 @@ export default function ReviewSection({ productId }: { productId: string }) {
                 <span className="font-bold text-gray-800">{rev.user?.name || "زائر"}</span>
                 <span className="text-yellow-500">{'★'.repeat(rev.rating)}{'☆'.repeat(5 - rev.rating)}</span>
                 <span className="text-gray-400 text-xs mr-auto">{new Date(rev.createdAt).toLocaleDateString('ar-LB')}</span>
+                
+                {/* ✅ زر الحذف (يظهر فقط للأدمن) */}
+                {isAdmin && (
+                  <button 
+                    onClick={() => handleDeleteReview(rev.id)}
+                    className="text-red-500 hover:text-red-700 text-xs font-bold bg-red-50 px-2 py-1 rounded"
+                  >
+                    حذف
+                  </button>
+                )}
               </div>
               {rev.comment && <p className="text-gray-600 text-sm">{rev.comment}</p>}
-              {/* ✅ عرض الصورة المرفقة */}
               {rev.imageUrl && (
                 <img src={rev.imageUrl} alt="صورة التقييم" className="mt-2 w-32 h-32 object-cover rounded-lg border" />
               )}

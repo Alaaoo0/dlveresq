@@ -203,7 +203,7 @@ export default function Navbar({ siteName }: { siteName: string }) {
               {mounted && user ? (
                 <div className="flex items-center gap-3">
                   <Link href="/orders" className="text-sm font-bold text-red-600 hover:text-red-700 transition-colors hidden sm:block">طلباتي</Link>
-                  <span className="text-sm font-bold text-gray-800 hidden sm:block">أهلاً، {user.name}</span>
+                  <Link href="/profile" className="text-sm font-bold text-gray-800 hover:text-red-600 transition-colors hidden sm:block">أهلاً، {user.name}</Link>
                   <button onClick={handleLogout} className="text-sm text-gray-600 hover:text-red-600 transition-colors">خروج</button>
                 </div>
               ) : (

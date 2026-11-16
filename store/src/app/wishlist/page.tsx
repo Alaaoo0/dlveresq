@@ -13,7 +13,7 @@ export default function WishlistPage() {
           if (!wishlist || wishlist.length === 0) {
               return (
                     <div className="max-w-4xl mx-auto p-8 text-center mt-10" dir="rtl">
-                            <h1 className="text-3xl font-bold mb-6 text-gray-900">مفضلتي</h1>
+                            <h1 className="text-3xl font-bold mb-6 text-red-600">مفضلتي</h1>
                                     <p className="text-gray-500 mb-6">ما في منتجات بالمفضلة.</p>
                                             <Link href="/" className="bg-black text-white px-6 py-3 rounded-lg font-bold inline-block">تسوق الآن</Link>
                                                   </div>
@@ -22,7 +22,7 @@ export default function WishlistPage() {
 
                                                           return (
                                                               <div className="max-w-6xl mx-auto p-4 mt-8" dir="rtl">
-                                                                    <h1 className="text-3xl font-bold mb-8 text-gray-900">مفضلتي ({wishlist.length})</h1>
+                                                                    <h1 className="text-3xl font-bold mb-8 text-red-600">مفضلتي ({wishlist.length})</h1>
                                                                           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
                                                                                   {wishlist.map((product: any) => (
                                                                                             <Link key={product.id} href={`/product?slug=${product.slug}`} className="bg-white rounded-lg shadow-sm border p-3 hover:shadow-md transition-shadow">

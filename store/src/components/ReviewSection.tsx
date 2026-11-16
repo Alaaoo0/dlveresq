@@ -10,7 +10,7 @@ export default function ReviewSection({ productId }: { productId: string }) {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
-  const [isAdmin, setIsAdmin] = useState(false); // ✅ حالة الأدمن
+  const [isAdmin, setIsAdmin] = useState(false);
 
   const fetchReviews = () => {
     fetch(`/api/reviews?productId=${productId}`)
@@ -20,7 +20,7 @@ export default function ReviewSection({ productId }: { productId: string }) {
 
   useEffect(() => {
     fetchReviews();
-    // التحقق من الكوكي تبع الأدمن
+    // التحقق من الكوكي
     if (document.cookie.includes('admin_session=true')) {
       setIsAdmin(true);
     }
@@ -35,14 +35,9 @@ export default function ReviewSection({ productId }: { productId: string }) {
     try {
       const res = await fetch("/api/upload", { method: "POST", body: formData });
       const data = await res.json();
-      if (data.url) {
-        setImageUrl(data.url);
-      } else {
-        alert("فشل رفع الصورة");
-      }
-    } catch (err) {
-      alert("خطأ في رفع الصورة");
-    }
+      if (data.url) setImageUrl(data.url);
+      else alert("فشل رفع الصورة");
+    } catch (err) { alert("خطأ في رفع الصورة"); }
     setUploading(false);
   };
 
@@ -58,30 +53,23 @@ export default function ReviewSection({ productId }: { productId: string }) {
     setSubmitting(false);
     
     if (res.ok) {
-      setComment("");
-      setImageUrl("");
-      setRating(5);
-      fetchReviews();
+      setComment(""); setImageUrl(""); setRating(5); fetchReviews();
     } else {
-      const data = await res.json();
-      setError(data.message);
+      const data = await res.json(); setError(data.message);
     }
   };
 
-  // ✅ دالة حذف التقييم (للأدمن فقط)
   const handleDeleteReview = async (reviewId: string) => {
     if (!confirm("متأكد إنك بدك تحذف هالتقييم؟")) return;
-    
     try {
       const res = await fetch(`/api/admin/reviews/${reviewId}`, { method: "DELETE" });
       if (res.ok) {
         setReviews(reviews.filter(r => r.id !== reviewId));
       } else {
-        alert("فشل حذف التقييم");
+        const err = await res.json();
+        alert(err.message || "فشل حذف التقييم");
       }
-    } catch (err) {
-      alert("صار خطأ بالاتصال");
-    }
+    } catch (err) { alert("صار خطأ بالاتصال"); }
   };
 
   return (
@@ -93,9 +81,7 @@ export default function ReviewSection({ productId }: { productId: string }) {
         <div className="flex items-center gap-2 mb-3">
           <span className="text-sm font-bold text-gray-700">التقييم:</span>
           {[1, 2, 3, 4, 5].map((star) => (
-            <button key={star} type="button" onClick={() => setRating(star)} className={`text-2xl ${rating >= star ? 'text-yellow-500' : 'text-gray-300'}`}>
-              ★
-            </button>
+            <button key={star} type="button" onClick={() => setRating(star)} className={`text-2xl ${rating >= star ? 'text-yellow-500' : 'text-gray-300'}`}>★</button>
           ))}
         </div>
         <textarea value={comment} onChange={(e) => setComment(e.target.value)} placeholder="اكتب مراجعتك هنا (اختياري)..." className="w-full border p-3 rounded text-black mb-3" rows={2}></textarea>
@@ -127,20 +113,15 @@ export default function ReviewSection({ productId }: { productId: string }) {
                 <span className="text-yellow-500">{'★'.repeat(rev.rating)}{'☆'.repeat(5 - rev.rating)}</span>
                 <span className="text-gray-400 text-xs mr-auto">{new Date(rev.createdAt).toLocaleDateString('ar-LB')}</span>
                 
-                {/* ✅ زر الحذف (يظهر فقط للأدمن) */}
+                {/* ✅ زر الحذف */}
                 {isAdmin && (
-                  <button 
-                    onClick={() => handleDeleteReview(rev.id)}
-                    className="text-red-500 hover:text-red-700 text-xs font-bold bg-red-50 px-2 py-1 rounded"
-                  >
+                  <button onClick={() => handleDeleteReview(rev.id)} className="text-red-500 hover:text-red-700 text-xs font-bold bg-red-50 px-2 py-1 rounded">
                     حذف
                   </button>
                 )}
               </div>
               {rev.comment && <p className="text-gray-600 text-sm">{rev.comment}</p>}
-              {rev.imageUrl && (
-                <img src={rev.imageUrl} alt="صورة التقييم" className="mt-2 w-32 h-32 object-cover rounded-lg border" />
-              )}
+              {rev.imageUrl && <img src={rev.imageUrl} alt="صورة التقييم" className="mt-2 w-32 h-32 object-cover rounded-lg border" />}
             </div>
           ))}
         </div>

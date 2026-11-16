@@ -4,7 +4,6 @@ import { cookies } from 'next/headers';
 
 export async function DELETE(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    // التحقق من إنه المستخدم أدمن
     const cookieStore = await cookies();
     const isAdmin = cookieStore.get('admin_session')?.value === 'true';
 

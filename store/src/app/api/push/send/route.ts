@@ -1,0 +1,35 @@
+import { NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
+import webpush from 'web-push';
+
+webpush.setVapidDetails(
+  process.env.VAPID_SUBJECT || 'mailto:info@aliboss.com',
+  process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || '',
+  process.env.VAPID_PRIVATE_KEY || ''
+);
+
+export async function POST(req: Request) {
+  try {
+    const { title, body, url } = await req.json();
+    const subscriptions = await prisma.pushSubscription.findMany();
+
+    const payload = JSON.stringify({ title, body, url });
+
+    const sendPromises = subscriptions.map((sub) =>
+      webpush.sendNotification(
+        { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
+        payload
+      ).catch(async (err) => {
+        if (err.statusCode === 410 || err.statusCode === 404) {
+          // إذا الزبون حذف التطبيق، منمسح اشتراكه
+          await prisma.pushSubscription.delete({ where: { id: sub.id } });
+        }
+      })
+    );
+
+    await Promise.all(sendPromises);
+    return NextResponse.json({ message: `تم إرسال الإشعار لـ ${subscriptions.length} زبون` });
+  } catch (error) {
+    return NextResponse.json({ message: 'فشل إرسال الإشعار' }, { status: 500 });
+  }
+}

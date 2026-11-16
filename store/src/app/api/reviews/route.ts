@@ -21,7 +21,7 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   try {
-    const { productId, rating, comment } = await req.json();
+    const { productId, rating, comment, imageUrl } = await req.json(); // ✅ استقبال الصورة
     const cookieStore = await cookies();
     const userId = cookieStore.get('user_session')?.value;
 
@@ -34,6 +34,7 @@ export async function POST(req: Request) {
         productId,
         rating: parseInt(rating),
         comment,
+        imageUrl, // ✅ حفظ الصورة
         userId
       },
     });

@@ -26,7 +26,7 @@ export async function POST(req: Request) {
         weight: parseInt(weight) || 500,
         imageUrl,
         category: category || "أجهزة الكترونية",
-        shippingCost: parseFloat(shippingCost) || 0 // ✅ حفظ الشحن
+        shippingCost: parseFloat(shippingCost) || 0 // ✅ إضافة تكلفة الشحن
       },
     });
     return NextResponse.json(product);

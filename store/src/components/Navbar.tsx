@@ -18,7 +18,6 @@ export default function Navbar({ siteName }: { siteName: string }) {
   const [isAdmin, setIsAdmin] = useState(false);
   const [categories, setCategories] = useState<any[]>([]);
 
-  // ✅ حالات البحث الذكي
   const [suggestions, setSuggestions] = useState<any[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
 
@@ -60,7 +59,6 @@ export default function Navbar({ siteName }: { siteName: string }) {
     setIsMenuOpen(false);
   }, [pathname]);
 
-  // ✅ دالة البحث الذكي (تشتغل أول ما تكتب)
   useEffect(() => {
     if (searchQuery.length > 1) {
       const delayDebounceFn = setTimeout(() => {
@@ -70,8 +68,7 @@ export default function Navbar({ siteName }: { siteName: string }) {
             setSuggestions(data);
             setShowSuggestions(true);
           });
-      }, 300); // بننتظر 300 ملي ثانية بعد ما يوقف الزبون عن الكتابة
-
+      }, 300);
       return () => clearTimeout(delayDebounceFn);
     } else {
       setSuggestions([]);
@@ -99,7 +96,6 @@ export default function Navbar({ siteName }: { siteName: string }) {
       }
 
       const registration = await navigator.serviceWorker.ready;
-      
       const subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: publicKey,
@@ -145,7 +141,6 @@ export default function Navbar({ siteName }: { siteName: string }) {
             {siteName}
           </Link>
           
-          {/* ✅ حقل البحث مع الاقتراحات */}
           <div className="flex-1 max-w-xl relative">
             <form onSubmit={handleSearch} className="flex">
               <input 
@@ -153,14 +148,13 @@ export default function Navbar({ siteName }: { siteName: string }) {
                 value={searchQuery} 
                 onChange={(e) => setSearchQuery(e.target.value)} 
                 onFocus={() => { if(suggestions.length > 0) setShowSuggestions(true); }}
-                onBlur={() => setTimeout(() => setShowSuggestions(false), 200)} // تأخير عشان نقدر نضغط عالاقتراح
+                onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
                 placeholder="ابحث عن منتج..." 
                 className="w-full border-2 border-red-600 rounded-l-full px-4 py-2 outline-none text-black text-sm" 
               />
               <button type="submit" className="bg-red-600 text-white px-6 py-2 rounded-r-full font-bold hover:bg-red-700 transition-colors">بحث</button>
             </form>
 
-            {/* ✅ قائمة الاقتراحات */}
             {showSuggestions && suggestions.length > 0 && (
               <ul className="absolute top-full left-0 w-full bg-white border border-gray-200 rounded-b-lg shadow-lg z-50 max-h-60 overflow-y-auto">
                 {suggestions.map((item) => (
@@ -181,9 +175,10 @@ export default function Navbar({ siteName }: { siteName: string }) {
 
           <div className="flex items-center gap-4">
             
+            {/* ✅ زر الأدمن هنا - بيظهر بس للأدمن */}
             {isAdmin && (
-              <Link href="/admin" className="text-gray-700 hover:text-red-600 transition-colors" title="لوحة التحكم">
-                <span className="text-2xl">⚙️</span>
+              <Link href="/admin" className="flex items-center gap-1 text-red-600 bg-red-50 px-3 py-1.5 rounded-full hover:bg-red-100 transition-colors font-bold text-sm" title="لوحة التحكم">
+                <span>⚙️</span> الإدارة
               </Link>
             )}
 
@@ -203,7 +198,7 @@ export default function Navbar({ siteName }: { siteName: string }) {
               {mounted && user ? (
                 <div className="flex items-center gap-3">
                   <Link href="/orders" className="text-sm font-bold text-red-600 hover:text-red-700 transition-colors hidden sm:block">طلباتي</Link>
-                  <Link href="/profile" className="text-sm font-bold text-gray-800 hover:text-red-600 transition-colors hidden sm:block">أهلاً، {user.name}</Link>
+                  <span className="text-sm font-bold text-gray-800 hidden sm:block">أهلاً، {user.name}</span>
                   <button onClick={handleLogout} className="text-sm text-gray-600 hover:text-red-600 transition-colors">خروج</button>
                 </div>
               ) : (

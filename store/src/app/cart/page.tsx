@@ -1,61 +1,101 @@
 "use client";
 
+import { useEffect } from "react";
 import { useCart } from "../context/CartContext";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 
 export default function CartPage() {
-  const { cart = [], removeFromCart, cartTotal = 0 } = useCart() || {};
+  const { cart = [], removeFromCart, cartTotal = 0, setCartFromShare } = useCart() || {};
+  const searchParams = useSearchParams();
 
-    if (cart.length === 0) {
-        return (
-              <div className="max-w-4xl mx-auto p-8 text-center mt-10" dir="rtl">
-                      <h1 className="text-3xl font-bold mb-6 text-red-600">سلة المشتريات</h1>
-                              <p className="text-gray-500 mb-6">السلة فاضية حالياً.</p>
-                                      <Link href="/" className="bg-black text-white px-6 py-3 rounded-lg font-bold inline-block hover:bg-gray-800">
-                                                تسوق الآن
-                                                        </Link>
-                                                              </div>
-                                                                  );
-                                                                    }
+  // ✅ التحقق إذا في رابط سلة مشترك (Share Cart)
+  useEffect(() => {
+    const shared = searchParams.get("share");
+    if (shared) {
+      try {
+        const decoded = JSON.parse(decodeURIComponent(shared));
+        if (setCartFromShare && Array.isArray(decoded)) {
+          setCartFromShare(decoded);
+          // مسح الرابط من المتصفح بعد التحميل
+          window.history.replaceState(null, '', '/cart');
+        }
+      } catch (e) {
+        console.error("خطأ في قراءة السلة المشتركة");
+      }
+    }
+  }, [searchParams, setCartFromShare]);
 
-                                                                      return (
-                                                                          <div className="max-w-4xl mx-auto p-4 mt-8" dir="rtl">
-                                                                                <h1 className="text-3xl font-bold mb-8 text-red-600">سلة المشتريات</h1>
-                                                                                      
-                                                                                            <div className="bg-white rounded-lg shadow-md p-6 border border-gray-100">
-                                                                                                    {/* هون صلحنا الخطأ: ضفنا : any */}
-                                                                                                            {cart.map((item: any) => (
-                                                                                                                      <div key={item.id} className="flex items-center justify-between border-b py-4">
-                                                                                                                                  <div className="flex items-center gap-4">
-                                                                                                                                                {item.imageUrl && (
-                                                                                                                                                                <img src={item.imageUrl} alt={item.name} className="w-16 h-16 object-cover rounded bg-gray-50" />
-                                                                                                                                                                              )}
-                                                                                                                                                                                            <div>
-                                                                                                                                                                                                            <h2 className="font-semibold text-gray-800">{item.name}</h2>
-                                                                                                                                                                                                                            <p className="text-gray-500 text-sm">الكمية: {item.quantity}</p>
-                                                                                                                                                                                                                                          </div>
-                                                                                                                                                                                                                                                      </div>
-                                                                                                                                                                                                                                                                  <div className="flex items-center gap-4">
-                                                                                                                                                                                                                                                                                <p className="font-bold text-red-600">${((item.price * item.quantity) / 100).toFixed(2)}</p>
-                                                                                                                                                                                                                                                                                              <button 
-                                                                                                                                                                                                                                                                                                              onClick={() => removeFromCart(item.id)}
-                                                                                                                                                                                                                                                                                                                              className="text-red-500 hover:text-red-700 text-sm font-medium"
-                                                                                                                                                                                                                                                                                                                                            >
-                                                                                                                                                                                                                                                                                                                                                            حذف
-                                                                                                                                                                                                                                                                                                                                                                          </button>
-                                                                                                                                                                                                                                                                                                                                                                                      </div>
-                                                                                                                                                                                                                                                                                                                                                                                                </div>
-                                                                                                                                                                                                                                                                                                                                                                                                        ))}
+  // ✅ دالة نسخ رابط السلة
+  const handleShareCart = () => {
+    if (cart.length === 0) return;
+    const encodedCart = encodeURIComponent(JSON.stringify(cart));
+    const shareUrl = `${window.location.origin}/cart?share=${encodedCart}`;
+    
+    navigator.clipboard.writeText(shareUrl).then(() => {
+      alert("تم نسخ رابط السلة! الصقه بأي مكان وابعته لصاحبك. 📋");
+    }).catch(() => {
+      alert("فشل نسخ الرابط. فيك تنسخه يدوياً.");
+    });
+  };
 
-                                                                                                                                                                                                                                                                                                                                                                                                                <div className="flex justify-between items-center mt-6 pt-4 border-t">
-                                                                                                                                                                                                                                                                                                                                                                                                                          <p className="text-xl font-bold text-gray-800">المجموع:</p>
-                                                                                                                                                                                                                                                                                                                                                                                                                                    <p className="text-2xl font-bold text-red-600">${(cartTotal / 100).toFixed(2)}</p>
-                                                                                                                                                                                                                                                                                                                                                                                                                                            </div>
-                                                                                                                                                                                                                                                                                                                                                                                                                                                    
-                                                                                                                                                                                                                                                                                                                                                                                                                                                            <Link href="/checkout" className="block w-full text-center bg-red-600 text-white font-bold py-4 rounded-lg mt-6 hover:bg-red-700 transition-colors">
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                      إتمام الطلب
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                              </Link>
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    </div>
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        </div>
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          );
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          }
+  if (cart.length === 0) {
+    return (
+      <div className="max-w-4xl mx-auto p-8 text-center mt-10" dir="rtl">
+        <h1 className="text-3xl font-bold mb-6 text-red-600">سلة المشتريات</h1>
+        <p className="text-gray-500 mb-6">السلة فاضية حالياً.</p>
+        <Link href="/" className="bg-black text-white px-6 py-3 rounded-lg font-bold inline-block hover:bg-gray-800">
+          تسوق الآن
+        </Link>
+      </div>
+    );
+  }
+
+  return (
+    <div className="max-w-4xl mx-auto p-4 mt-8" dir="rtl">
+      <div className="flex justify-between items-center mb-8">
+        <h1 className="text-3xl font-bold text-red-600">سلة المشتريات</h1>
+        <button 
+          onClick={handleShareCart}
+          className="bg-blue-600 text-white px-4 py-2 rounded-lg font-bold text-sm hover:bg-blue-700 transition-colors flex items-center gap-2"
+        >
+          🔗 مشاركة السلة
+        </button>
+      </div>
+      
+      <div className="bg-white rounded-lg shadow-md p-6 border border-gray-100">
+        {cart.map((item: any) => (
+          <div key={item.id} className="flex items-center justify-between border-b py-4">
+            <div className="flex items-center gap-4">
+              {item.imageUrl && (
+                <img src={item.imageUrl} alt={item.name} className="w-16 h-16 object-cover rounded bg-gray-50" />
+              )}
+              <div>
+                <h2 className="font-semibold text-gray-800">{item.name}</h2>
+                <p className="text-gray-500 text-sm">الكمية: {item.quantity}</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-4">
+              <p className="font-bold text-red-600">${((item.price * item.quantity) / 100).toFixed(2)}</p>
+              <button 
+                onClick={() => removeFromCart(item.id)}
+                className="text-red-500 hover:text-red-700 text-sm font-medium"
+              >
+                حذف
+              </button>
+            </div>
+          </div>
+        ))}
+
+        <div className="flex justify-between items-center mt-6 pt-4 border-t">
+          <p className="text-xl font-bold text-gray-800">المجموع:</p>
+          <p className="text-2xl font-bold text-red-600">${(cartTotal / 100).toFixed(2)}</p>
+        </div>
+        
+        <Link href="/checkout" className="block w-full text-center bg-red-600 text-white font-bold py-4 rounded-lg mt-6 hover:bg-red-700 transition-colors">
+          إتمام الطلب
+        </Link>
+      </div>
+    </div>
+  );
+}

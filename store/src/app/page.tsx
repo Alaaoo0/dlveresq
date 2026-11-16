@@ -10,7 +10,7 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<string>("الكل");
 
-  // ✅ حالات العداد التنازلي
+  // حالات العداد التنازلي
   const [timeLeft, setTimeLeft] = useState({ hours: 0, minutes: 0, seconds: 0 });
 
   useEffect(() => {
@@ -32,12 +32,11 @@ export default function Home() {
       });
   }, []);
 
-  // ✅ مؤقت العداد التنازلي (بيعيد نفسه كل 24 ساعة)
+  // مؤقت العداد التنازلي
   useEffect(() => {
     const calculateTimeLeft = () => {
       const now = new Date();
       const target = new Date();
-      // بنخلي العداد يخلص الساعة 12 بالليل
       target.setHours(24, 0, 0, 0); 
       const difference = target.getTime() - now.getTime();
 
@@ -64,17 +63,19 @@ export default function Home() {
   return (
     <main className="max-w-7xl mx-auto p-4 bg-gray-50 min-h-screen" dir="rtl">
       
-      {/* البانر الإعلاني مع العداد */}
+      {/* البانر الإعلاني مع العداد وزر تسوق الآن */}
       <div className="w-full bg-gradient-to-l from-red-600 via-orange-500 to-yellow-400 rounded-xl mb-6 p-6 sm:p-10 flex flex-col md:flex-row items-center justify-between text-white shadow-md relative overflow-hidden">
         <div className="relative z-10 text-center md:text-right mb-4 md:mb-0">
           <h1 className="text-3xl sm:text-5xl font-black mb-2">{settings?.heroTitle || "تخفيضات الميجا سيل!"}</h1>
           <p className="text-sm sm:text-lg opacity-95 font-medium">{settings?.heroSubtitle || "خصومات تصل لـ 70% | توصيل سريع"}</p>
-          <button className="mt-4 bg-white text-red-600 font-bold px-6 py-2 rounded-full hover:bg-gray-100 transition-colors shadow-lg">
+          
+          {/* ✅ زر تسوق الآن مربوط بقسم المنتجات */}
+          <a href="#products-section" className="mt-4 inline-block bg-white text-red-600 font-bold px-8 py-3 rounded-full hover:bg-gray-100 transition-colors shadow-lg cursor-pointer">
             {settings?.heroBtnText || "تسوق الآن"}
-          </button>
+          </a>
         </div>
 
-        {/* ✅ العداد التنازلي */}
+        {/* العداد التنازلي */}
         <div className="relative z-10 flex flex-col items-center bg-white/20 backdrop-blur-sm p-4 rounded-xl border border-white/30">
           <p className="text-sm font-bold mb-2">ينتهي العرض بعد:</p>
           <div className="flex gap-2 text-center" dir="ltr">
@@ -96,7 +97,7 @@ export default function Home() {
         <span className="text-7xl sm:text-9xl opacity-20 absolute -left-4 -bottom-4 pointer-events-none">🛍️</span>
       </div>
 
-      <div className="flex flex-col md:flex-row gap-6">
+      <div id="products-section" className="flex flex-col md:flex-row gap-6">
         
         {/* القائمة الجانبية للأقسام */}
         <aside className="w-full md:w-64 shrink-0">

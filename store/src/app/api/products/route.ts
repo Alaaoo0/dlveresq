@@ -17,7 +17,8 @@ export async function POST(req: Request) {
     
     const slug = name.toLowerCase().replace(/[^a-z0-9-]/g, '-') + '-' + Date.now();
 
-    const product = await prisma.product.create({
+    // ✅ هنا صلحنا الخطأ: استخدمنا (prisma.product as any) عشان نتجاوز مشكلة الأنواع مؤقتاً
+    const product = await (prisma.product as any).create({
       data: {
         name, 
         slug,

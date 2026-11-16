@@ -19,7 +19,7 @@ export async function GET(req: Request) {
         ],
       },
       orderBy: { createdAt: 'desc' },
-      take: 50, // نعرض 50 منتج كحد أقصى
+      take: 5, // ✅ نعرض 5 اقتراحات بس
     });
 
     return NextResponse.json(products);

@@ -1,4 +1,5 @@
 "use client";
+
 import Link from "next/link";
 import { useCart } from "../app/context/CartContext";
 import { useWishlist } from "../context/WishlistContext";
@@ -21,6 +22,9 @@ export default function Navbar({ siteName }: { siteName: string }) {
   const [suggestions, setSuggestions] = useState<any[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
 
+  // 💳 هون ضفنا حالة الرصيد
+  const [balance, setBalance] = useState(0);
+
   const [modalOpen, setModalOpen] = useState(false);
   const [modalMessage, setModalMessage] = useState("");
   const [modalType, setModalType] = useState<"error" | "success">("error");
@@ -34,9 +38,22 @@ export default function Navbar({ siteName }: { siteName: string }) {
   useEffect(() => {
     setMounted(true);
     
+    // 💳 هون عدلنا الـ fetch عشان يجيب بيانات الزبون والرصيد مع بعض
     fetch("/api/auth/me", { cache: 'no-store' })
       .then(res => res.json())
-      .then(data => setUser(data.user))
+      .then(data => {
+        setUser(data.user);
+        if (data.user) {
+          fetch("/api/user/wallet", { cache: 'no-store' })
+            .then(res => res.json())
+            .then(walletData => {
+              if (walletData && walletData.walletBalance !== undefined) {
+                setBalance(walletData.walletBalance);
+              }
+            })
+            .catch(() => {});
+        }
+      })
       .catch(() => setUser(null));
 
     fetch("/api/categories")
@@ -135,7 +152,6 @@ export default function Navbar({ siteName }: { siteName: string }) {
   return (
     <>
       <header className="bg-white shadow-sm sticky top-0 z-50 border-b border-gray-200 flex flex-col">
-        
         <div className="max-w-7xl mx-auto w-full px-4 py-3 flex items-center justify-between gap-4">
           <Link href="/" className="text-2xl font-black text-red-600 tracking-tighter block cursor-pointer transition-transform duration-300 hover:scale-105">
             {siteName}
@@ -174,7 +190,6 @@ export default function Navbar({ siteName }: { siteName: string }) {
           </div>
 
           <div className="flex items-center gap-4">
-            
             {/* ✅ زر الأدمن هنا - بيظهر بس للأدمن */}
             {isAdmin && (
               <Link href="/admin" className="flex items-center gap-1 text-red-600 bg-red-50 px-3 py-1.5 rounded-full hover:bg-red-100 transition-colors font-bold text-sm" title="لوحة التحكم">
@@ -198,6 +213,13 @@ export default function Navbar({ siteName }: { siteName: string }) {
               {mounted && user ? (
                 <div className="flex items-center gap-3">
                   <Link href="/orders" className="text-sm font-bold text-red-600 hover:text-red-700 transition-colors hidden sm:block">طلباتي</Link>
+                  
+                  {/* 💳 هون ضفنا زر المحفظة */}
+                  <Link href="/wallet" className="flex items-center gap-1 bg-green-50 text-green-700 px-3 py-1.5 rounded-full hover:bg-green-100 transition-colors font-bold text-sm mr-2" title="محفظتي">
+                    <span>💳</span>
+                    <span>${(balance / 100).toFixed(2)}</span>
+                  </Link>
+
                   <Link href="/profile" className="text-sm font-bold text-gray-800 hover:text-red-600 transition-colors hidden sm:block">أهلاً، {user.name}</Link>
                   <button onClick={handleLogout} className="text-sm text-gray-600 hover:text-red-600 transition-colors">خروج</button>
                 </div>
@@ -243,7 +265,6 @@ export default function Navbar({ siteName }: { siteName: string }) {
             </div>
           </div>
         )}
-
       </header>
 
       {modalOpen && (

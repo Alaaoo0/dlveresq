@@ -32,7 +32,7 @@ model Order {
                 customerConfirmed Boolean     @default(false)
                   couponId          String?
                     coupon            Coupon?     @relation(fields: [couponId], references: [id])
-                      discountAmount    Float       @default(0)
+                      discountAmount    Int         @default(0)
                         createdAt         DateTime    @default(now())
                           userId            String?
                             user              User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
@@ -88,17 +88,11 @@ enum CouponType {
       FIXED
 }
 
-model Category {
-    id        String   @id @default(cuid())
-      name      String   @unique
-        createdAt DateTime @default(now())
-}
-
 model Review {
     id        String   @id @default(cuid())
       rating    Int      @default(5)
         comment   String?
-          imageUrl  String?  
+          imageUrl  String?
             productId String
               product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
                 userId    String?
@@ -111,20 +105,19 @@ model User {
       name               String
         email              String              @unique
           password           String
-            walletBalance      Float               @default(0)
+            walletBalance      Int                 @default(0) // غيرناها لـ Int عشان السنتات
               createdAt          DateTime            @default(now())
                 orders             Order[]
                   reviews            Review[]
-                    walletTransactions WalletTransaction[] // ✅ تمت إضافتها لربط المعاملات بالمستخدم
+                    walletTransactions WalletTransaction[]
 }
 
 model WalletTransaction {
     id        String   @id @default(cuid())
       userId    String
-        amount    Float
+        amount    Int      // غيرناها لـ Int عشان السنتات
           type      String   // "DEPOSIT" (شحن) أو "WITHDRAW" (شراء)
-            status    String   @default("PENDING") // "PENDING", "APPROVED", "REJECTED"
+            status    String   @default("PENDING")
               createdAt DateTime @default(now())
                 user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-}
 }

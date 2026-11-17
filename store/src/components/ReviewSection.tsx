@@ -18,10 +18,13 @@ export default function ReviewSection({ productId }: { productId: string }) {
 
   useEffect(() => { 
     fetchReviews(); 
-    // 👇 نتأكد إذا المستخدم أدمن عشان نطلع زر الحذف
-    if (document.cookie.includes('admin_session=true')) {
-      setIsAdmin(true);
-    }
+    // 👇 هون التعديل: بنسأل السيرفر إذا المستخدم أدمن
+    fetch("/api/check-admin")
+      .then(res => res.json())
+      .then(data => {
+        if (data.isAdmin) setIsAdmin(true);
+      })
+      .catch(() => setIsAdmin(false));
   }, [productId]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -50,7 +53,7 @@ export default function ReviewSection({ productId }: { productId: string }) {
     
     const res = await fetch(`/api/reviews/${id}`, { method: "DELETE" });
     if (res.ok) {
-      fetchReviews(); // تحديث القائمة بعد الحذف
+      fetchReviews();
     } else {
       alert("فشل حذف التقييم");
     }
@@ -60,7 +63,6 @@ export default function ReviewSection({ productId }: { productId: string }) {
     <div className="mt-12 bg-white rounded-xl shadow-sm p-6 border border-gray-100">
       <h2 className="text-2xl font-bold mb-6 text-gray-900">التقييمات والمراجعات</h2>
 
-      {/* إضافة تقييم */}
       <form onSubmit={handleSubmit} className="mb-8 bg-gray-50 p-4 rounded-lg border border-gray-200">
         <h3 className="font-bold text-gray-800 mb-3">أضف تقييمك</h3>
         <div className="flex items-center gap-2 mb-3">
@@ -78,7 +80,6 @@ export default function ReviewSection({ productId }: { productId: string }) {
         </button>
       </form>
 
-      {/* عرض التقييمات */}
       {loading ? (
         <p className="text-gray-500">جاري تحميل التقييمات...</p>
       ) : reviews.length === 0 ? (
@@ -92,7 +93,6 @@ export default function ReviewSection({ productId }: { productId: string }) {
                 <span className="text-yellow-500">{'★'.repeat(rev.rating)}{'☆'.repeat(5 - rev.rating)}</span>
                 <span className="text-gray-400 text-xs mr-auto">{new Date(rev.createdAt).toLocaleDateString('ar-LB')}</span>
                 
-                {/* 👈 زر الحذف للأدمن فقط */}
                 {isAdmin && (
                   <button 
                     onClick={() => handleDeleteReview(rev.id)}
@@ -105,7 +105,6 @@ export default function ReviewSection({ productId }: { productId: string }) {
               
               {rev.comment && <p className="text-gray-600 text-sm mb-2">{rev.comment}</p>}
               
-              {/* 👈 تعديل عرض الصورة عشان تبان بحجم مناسب */}
               {rev.imageUrl && (
                 <div className="mt-2">
                   <img src={rev.imageUrl} alt="Review" className="w-full max-w-[200px] object-cover rounded-lg border shadow-sm" />

@@ -128,10 +128,8 @@ export default function Navbar({ siteName }: { siteName: string }) {
 
   return (
     <>
-      {/* 👈 ضفنا w-full max-w-full overflow-x-hidden */}
       <header className="bg-white shadow-sm sticky top-0 z-50 border-b border-gray-200 flex flex-col w-full max-w-full overflow-x-hidden">
         
-        {/* الجزء العلوي: اللوجو والأيقونات */}
         <div className="max-w-7xl mx-auto w-full px-3 py-2 flex items-center justify-between gap-2">
           <Link href="/" className="text-xl sm:text-2xl font-black text-red-600 tracking-tighter shrink-0 hover:scale-105 transition-transform">
             {siteName}
@@ -167,7 +165,6 @@ export default function Navbar({ siteName }: { siteName: string }) {
           </div>
         </div>
 
-        {/* شريط البحث (نزل لسطر لحاله) */}
         <div className="w-full px-3 pb-2 relative md:max-w-3xl md:mx-auto">
           <form onSubmit={handleSearch} className="flex w-full">
             <input 
@@ -200,9 +197,9 @@ export default function Navbar({ siteName }: { siteName: string }) {
           )}
         </div>
 
-        {/* الشريط السفلي */}
         <div className="bg-gray-100 border-t border-gray-200">
           <div className="max-w-7xl mx-auto px-2 py-1.5 flex justify-center items-center gap-4 sm:gap-8">
+            {/* 👈 زر المتجر: صار يودي لصفحة المنتجات ويظهر الأقسام */}
             <button
               onClick={() => setIsMenuOpen(!isMenuOpen)}
               className="flex items-center gap-1 font-bold text-gray-800 hover:text-red-600 transition-colors text-xs sm:text-base"
@@ -220,7 +217,6 @@ export default function Navbar({ siteName }: { siteName: string }) {
           </div>
         </div>
 
-        {/* قائمة الأقسام المنسدلة */}
         {isMenuOpen && (
           <div className="bg-white border-t border-gray-200 shadow-lg absolute top-full left-0 w-full z-50">
             <div className="max-w-7xl mx-auto p-3 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">

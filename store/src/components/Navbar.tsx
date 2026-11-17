@@ -128,29 +128,31 @@ export default function Navbar({ siteName }: { siteName: string }) {
 
   return (
     <>
-      <header className="bg-white shadow-sm sticky top-0 z-50 border-b border-gray-200 flex flex-col w-full max-w-full">
+      <header className="bg-white shadow-sm sticky top-0 z-50 border-b border-gray-200 flex flex-col w-full max-w-full overflow-x-hidden">
         
-        <div className="max-w-7xl mx-auto w-full px-3 py-2 flex items-center justify-between gap-2">
-          <Link href="/" className="text-xl sm:text-2xl font-black text-red-600 tracking-tighter shrink-0 hover:scale-105 transition-transform">
+        {/* 👇 عدلنا المسافات والأحجام هون عشان تتزبط على كل الشاشات */}
+        <div className="max-w-7xl mx-auto w-full px-2 sm:px-4 py-2 flex items-center justify-between gap-1 sm:gap-2">
+          
+          <Link href="/" className="text-lg sm:text-2xl font-black text-red-600 tracking-tighter shrink-0 hover:scale-105 transition-transform">
             {siteName}
           </Link>
           
           <div className="flex items-center gap-1 sm:gap-3 shrink-0">
-            <Link href="/admin" className="text-gray-400 hover:text-red-600 transition-colors text-lg sm:text-2xl" title="دخول الإدارة">⚙️</Link>
-            <button onClick={subscribeToPush} className="text-gray-700 hover:text-red-600 transition-colors text-lg sm:text-2xl" title="تفعيل الإشعارات">🔔</button>
-            <Link href="/wishlist" className="relative text-gray-700 hover:text-red-600 text-lg sm:text-2xl transition-colors">
+            <Link href="/admin" className="text-gray-400 hover:text-red-600 transition-colors text-base sm:text-2xl" title="الإدارة">⚙️</Link>
+            <button onClick={subscribeToPush} className="text-gray-700 hover:text-red-600 transition-colors text-base sm:text-2xl" title="الإشعارات">🔔</button>
+            <Link href="/wishlist" className="relative text-gray-700 hover:text-red-600 text-base sm:text-2xl transition-colors">
               ❤️
-              {mounted && totalWishlist > 0 && <span className="absolute -top-1 -right-1 bg-red-600 text-white text-[10px] font-bold w-4 h-4 sm:w-5 sm:h-5 flex items-center justify-center rounded-full">{totalWishlist}</span>}
+              {mounted && totalWishlist > 0 && <span className="absolute -top-1 -right-1 bg-red-600 text-white text-[9px] sm:text-xs font-bold w-3.5 h-3.5 sm:w-5 sm:h-5 flex items-center justify-center rounded-full">{totalWishlist}</span>}
             </Link>
-            <Link href="/cart" className="relative text-gray-700 hover:text-red-600 text-lg sm:text-2xl transition-colors">
+            <Link href="/cart" className="relative text-gray-700 hover:text-red-600 text-base sm:text-2xl transition-colors">
               🛒
-              {mounted && totalItems > 0 && <span className="absolute -top-1 -right-1 bg-red-600 text-white text-[10px] font-bold w-4 h-4 sm:w-5 sm:h-5 flex items-center justify-center rounded-full">{totalItems}</span>}
+              {mounted && totalItems > 0 && <span className="absolute -top-1 -right-1 bg-red-600 text-white text-[9px] sm:text-xs font-bold w-3.5 h-3.5 sm:w-5 sm:h-5 flex items-center justify-center rounded-full">{totalItems}</span>}
             </Link>
             
-            <div className="border-r pr-2 flex items-center gap-1 sm:gap-2">
+            <div className="border-r border-gray-300 pr-1 sm:pr-3 flex items-center gap-1 sm:gap-2">
               {mounted && user ? (
-                <div className="flex items-center gap-2">
-                  <Link href="/wallet" className="flex items-center gap-1 bg-green-50 text-green-700 px-2 py-1 rounded-full hover:bg-green-100 font-bold text-[10px] sm:text-xs" title="محفظتي">
+                <div className="flex items-center gap-1 sm:gap-2">
+                  <Link href="/wallet" className="flex items-center gap-1 bg-green-50 text-green-700 px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-full hover:bg-green-100 font-bold text-[10px] sm:text-xs" title="المحفظة">
                     💳 <span className="hidden xs:inline">${Number(balance).toFixed(2)}</span>
                   </Link>
                   <Link href="/profile" className="text-sm font-bold text-gray-800 hover:text-red-600 hidden md:block">أهلاً، {user.name}</Link>
@@ -158,14 +160,16 @@ export default function Navbar({ siteName }: { siteName: string }) {
                 </div>
               ) : (
                 <Link href="/login" className="text-xs sm:text-sm font-bold text-gray-700 hover:text-red-600 flex items-center gap-1">
-                  <span className="text-lg">👤</span> دخول
+                  <span className="text-base sm:text-xl">👤</span>
+                  {/* 👇 هون خلينا كلمة دخول تختفي عالموبايل الصغير */}
+                  <span className="hidden sm:inline">دخول</span>
                 </Link>
               )}
             </div>
           </div>
         </div>
 
-        <div className="w-full px-3 pb-2 relative md:max-w-3xl md:mx-auto">
+        <div className="w-full px-2 sm:px-4 pb-2 relative md:max-w-3xl md:mx-auto">
           <form onSubmit={handleSearch} className="flex w-full">
             <input 
               type="text" 
@@ -176,11 +180,11 @@ export default function Navbar({ siteName }: { siteName: string }) {
               placeholder="ابحث عن منتج..." 
               className="w-full border-2 border-red-600 rounded-r-full px-3 py-1.5 outline-none text-black text-xs sm:text-sm" 
             />
-            <button type="submit" className="bg-red-600 text-white px-4 py-1.5 rounded-l-full font-bold text-xs sm:text-sm hover:bg-red-700 transition-colors shrink-0">بحث</button>
+            <button type="submit" className="bg-red-600 text-white px-3 sm:px-6 py-1.5 rounded-l-full font-bold text-xs sm:text-sm hover:bg-red-700 transition-colors shrink-0">بحث</button>
           </form>
 
           {showSuggestions && suggestions.length > 0 && (
-            <ul className="absolute top-full left-3 right-3 bg-white border border-gray-200 rounded-b-lg shadow-lg z-50 max-h-60 overflow-y-auto">
+            <ul className="absolute top-full left-2 right-2 sm:left-4 sm:right-4 bg-white border border-gray-200 rounded-b-lg shadow-lg z-50 max-h-60 overflow-y-auto">
               {suggestions.map((item) => (
                 <li key={item.id}>
                   <Link 
@@ -198,9 +202,7 @@ export default function Navbar({ siteName }: { siteName: string }) {
         </div>
 
         <div className="bg-gray-100 border-t border-gray-200">
-          <div className="max-w-7xl mx-auto px-2 py-1.5 flex justify-center items-center gap-4 sm:gap-8">
-            
-            {/* 👈 زر المتجر هون: بيفتح ويقفل القائمة */}
+          <div className="max-w-7xl mx-auto px-2 py-1.5 flex justify-center items-center gap-3 sm:gap-8">
             <button
               onClick={() => setIsMenuOpen(!isMenuOpen)}
               className="flex items-center gap-1 font-bold text-gray-800 hover:text-red-600 transition-colors text-xs sm:text-base"
@@ -218,21 +220,20 @@ export default function Navbar({ siteName }: { siteName: string }) {
           </div>
         </div>
 
-        {/* القائمة المنسدلة */}
         {isMenuOpen && (
           <div className="bg-white border-t border-gray-200 shadow-xl absolute top-full left-0 w-full z-50">
-            <div className="max-w-7xl mx-auto p-4">
+            <div className="max-w-7xl mx-auto p-3 sm:p-4">
               <div className="flex items-center justify-between mb-4 border-b pb-2">
                 <h3 className="font-bold text-gray-800">تصفح الأقسام</h3>
                 <Link href="/products" className="text-sm text-blue-600 font-bold hover:underline">كل المنتجات ←</Link>
               </div>
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3">
                 {categories.map((cat: any) => (
                   <Link
                     key={cat.id}
                     href={`/products?category=${encodeURIComponent(cat.name)}`}
                     onClick={() => setIsMenuOpen(false)}
-                    className="p-3 bg-gray-50 rounded-lg text-center font-semibold text-gray-700 hover:bg-red-50 hover:text-red-600 transition-colors border border-gray-100"
+                    className="p-2 sm:p-3 bg-gray-50 rounded-lg text-center font-semibold text-gray-700 hover:bg-red-50 hover:text-red-600 transition-colors border border-gray-100 text-xs sm:text-sm"
                   >
                     {cat.name}
                   </Link>

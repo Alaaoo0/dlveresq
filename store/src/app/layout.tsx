@@ -5,7 +5,6 @@ import { CartProvider } from "./context/CartContext";
 import { WishlistProvider } from "../context/WishlistContext";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
-import NotificationPopup from "../components/NotificationPopup";
 import { prisma } from "@/lib/prisma";
 
 export const instant = false;
@@ -32,22 +31,38 @@ export const metadata: Metadata = {
 
                               export default async function RootLayout({ children }: { children: React.ReactNode }) {
                                 let settings = await prisma.settings.findUnique({ where: { id: 'global' } });
-                                  if (!settings) settings = { id: 'global', siteName: 'Ali-Boss', heroTitle: '', heroSubtitle: '', heroBtnText: '', discountBadge: '', whatsapp: '96170000000', email: 'info@aliboss.com' };
+                                  
+                                    if (!settings) {
+                                        settings = { 
+                                              id: 'global', 
+                                                    siteName: 'Ali-Boss', 
+                                                          heroTitle: '', 
+                                                                heroSubtitle: '', 
+                                                                      heroBtnText: '', 
+                                                                            discountBadge: '', 
+                                                                                  whatsapp: '96170000000', 
+                                                                                        whishNumber: '0000000', // 👈 ضفنا هاد الحقل
+                                                                                              email: 'info@aliboss.com' 
+                                                                                                  };
+                                                                                                    }
 
-                                    return (
-                                        <html lang="ar" dir="rtl">
-                                              <body className={inter.className}>
-                                                      <CartProvider>
-                                                                <WishlistProvider>
-                                                                            <div className="flex flex-col min-h-screen relative">
-                                                                                          <Navbar siteName={settings.siteName} />
-                                                                                                        <main className="flex-grow">{children}</main>
-                                                                                                                      <Footer whatsapp={settings.whatsapp} email={settings.email} siteName={settings.siteName} />
-                                                                                                                                    <NotificationPopup /> {/* هون ركبنا النافذة */}
-                                                                                                                                                </div>
-                                                                                                                                                          </WishlistProvider>
-                                                                                                                                                                  </CartProvider>
-                                                                                                                                                                        </body>
-                                                                                                                                                                            </html>
-                                                                                                                                                                              );
-                                                                                                                                                                              }
+                                                                                                      return (
+                                                                                                          <html lang="ar" dir="rtl">
+                                                                                                                <body className={inter.className}>
+                                                                                                                        <CartProvider>
+                                                                                                                                  <WishlistProvider>
+                                                                                                                                              <div className="flex flex-col min-h-screen">
+                                                                                                                                                            <Navbar siteName={settings?.siteName || "Ali-Boss"} />
+                                                                                                                                                                          <main className="flex-grow">{children}</main>
+                                                                                                                                                                                        <Footer 
+                                                                                                                                                                                                        whatsapp={settings?.whatsapp || ""} 
+                                                                                                                                                                                                                        email={settings?.email || ""} 
+                                                                                                                                                                                                                                        siteName={settings?.siteName || "Ali-Boss"} 
+                                                                                                                                                                                                                                                      />
+                                                                                                                                                                                                                                                                  </div>
+                                                                                                                                                                                                                                                                            </WishlistProvider>
+                                                                                                                                                                                                                                                                                    </CartProvider>
+                                                                                                                                                                                                                                                                                          </body>
+                                                                                                                                                                                                                                                                                              </html>
+                                                                                                                                                                                                                                                                                                );
+                                                                                                                                                                                                                                                                                                }

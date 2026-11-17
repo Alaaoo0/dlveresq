@@ -100,24 +100,25 @@ model Review {
                     createdAt DateTime @default(now())
 }
 
+
+
 model User {
-    id                 String              @id @default(cuid())
-      name               String
-        email              String              @unique
-          password           String
-            walletBalance      Int                 @default(0) // غيرناها لـ Int عشان السنتات
-              createdAt          DateTime            @default(now())
-                orders             Order[]
-                  reviews            Review[]
-                    walletTransactions WalletTransaction[]
+  id            String   @id @default(cuid())
+  name          String
+  email         String   @unique
+  password      String
+  walletBalance Float    @default(0) // ✅ حقل رصيد المحفظة
+  createdAt     DateTime @default(now())
+  orders        Order[]
+  reviews       Review[]
 }
 
 model WalletTransaction {
-    id        String   @id @default(cuid())
-      userId    String
-        amount    Int      // غيرناها لـ Int عشان السنتات
-          type      String   // "DEPOSIT" (شحن) أو "WITHDRAW" (شراء)
-            status    String   @default("PENDING")
-              createdAt DateTime @default(now())
-                user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id        String   @id @default(cuid())
+  userId    String
+  amount    Float
+  type      String   // "DEPOSIT" (شحن) أو "WITHDRAW" (شراء)
+  status    String   @default("PENDING") // "PENDING", "APPROVED", "REJECTED"
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }

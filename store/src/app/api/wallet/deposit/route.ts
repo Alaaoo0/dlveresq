@@ -9,13 +9,16 @@ export async function POST(req: Request) {
     const userId = cookieStore.get('user_session')?.value;
 
     if (!userId) return NextResponse.json({ message: 'يجب تسجيل الدخول' }, { status: 401 });
-    if (amount <= 0) return NextResponse.json({ message: 'المبلغ غير صالح' }, { status: 400 });
+    
+    const parsedAmount = parseFloat(amount);
+    if (isNaN(parsedAmount) || parsedAmount <= 0) {
+      return NextResponse.json({ message: 'المبلغ غير صالح' }, { status: 400 });
+    }
 
-    // إنشاء طلب شحن رصيد (بحالة PENDING)
     await prisma.walletTransaction.create({
       data: {
         userId,
-        amount: parseFloat(amount),
+        amount: parsedAmount,
         type: 'DEPOSIT',
         status: 'PENDING',
       },

@@ -130,44 +130,47 @@ export default function Navbar({ siteName }: { siteName: string }) {
     <>
       <header className="bg-white shadow-sm sticky top-0 z-50 border-b border-gray-200 flex flex-col w-full">
         
-        {/* الصف الأول: اللوجو والأيقونات */}
-        <div className="w-full px-3 py-2 flex items-center justify-between border-b border-gray-100">
-          <Link href="/" className="text-xl sm:text-2xl font-black text-red-600 tracking-tighter hover:scale-105 transition-transform shrink-0">
+        {/* الصف الأول: اللوجو والأيقونات والرصيد */}
+        <div className="w-full px-3 py-2 flex flex-wrap items-center justify-between border-b border-gray-100 gap-y-2">
+          
+          {/* اللوجو */}
+          <Link href="/" className="text-xl sm:text-2xl font-black text-red-600 tracking-tighter shrink-0">
             {siteName}
           </Link>
-          
-          <div className="flex items-center gap-3 sm:gap-4">
-            <Link href="/admin" className="text-gray-500 hover:text-red-600 transition-colors text-xl sm:text-2xl" title="الإدارة">⚙️</Link>
-            <button onClick={subscribeToPush} className="text-gray-500 hover:text-red-600 transition-colors text-xl sm:text-2xl" title="الإشعارات">🔔</button>
-            <Link href="/wishlist" className="relative text-gray-500 hover:text-red-600 text-xl sm:text-2xl transition-colors">
+
+          {/* الأيقونات والرصيد */}
+          <div className="flex items-center gap-2 sm:gap-3 flex-wrap justify-end">
+            <Link href="/admin" className="text-gray-500 hover:text-red-600 text-lg sm:text-xl" title="الإدارة">⚙️</Link>
+            <button onClick={subscribeToPush} className="text-gray-500 hover:text-red-600 text-lg sm:text-xl" title="الإشعارات">🔔</button>
+            <Link href="/wishlist" className="relative text-gray-500 hover:text-red-600 text-lg sm:text-xl">
               ❤️
               {mounted && totalWishlist > 0 && <span className="absolute -top-1 -right-2 bg-red-600 text-white text-[10px] font-bold w-4 h-4 flex items-center justify-center rounded-full">{totalWishlist}</span>}
             </Link>
-            <Link href="/cart" className="relative text-gray-500 hover:text-red-600 text-xl sm:text-2xl transition-colors">
+            <Link href="/cart" className="relative text-gray-500 hover:text-red-600 text-lg sm:text-xl">
               🛒
               {mounted && totalItems > 0 && <span className="absolute -top-1 -right-2 bg-red-600 text-white text-[10px] font-bold w-4 h-4 flex items-center justify-center rounded-full">{totalItems}</span>}
             </Link>
 
-            <div className="border-r border-gray-300 pr-3 flex items-center gap-2">
+            <div className="border-r border-gray-300 pr-2 flex items-center gap-2 ml-2">
               {mounted && user ? (
-                <div className="flex items-center gap-2">
-                  <Link href="/wallet" className="flex items-center gap-1 bg-green-50 text-green-700 px-2 py-1 rounded-full hover:bg-green-100 font-bold text-xs" title="محفظتي">
-                    💳 <span className="hidden xs:inline">${Number(balance).toFixed(2)}</span>
+                <>
+                  {/* الرصيد: كبرناه وشلنا الشرط اللي كان يخفيه */}
+                  <Link href="/wallet" className="flex items-center gap-1 bg-green-100 text-green-800 px-3 py-1 rounded-full font-bold text-xs sm:text-sm whitespace-nowrap">
+                    💳 ${Number(balance).toFixed(2)}
                   </Link>
-                  <Link href="/profile" className="text-sm font-bold text-gray-800 hover:text-red-600 hidden md:block">أهلاً، {user.name}</Link>
-                  <button onClick={handleLogout} className="text-xs text-gray-500 hover:text-red-600">خروج</button>
-                </div>
+                  <button onClick={handleLogout} className="text-xs sm:text-sm text-red-600 font-bold hover:underline whitespace-nowrap">خروج</button>
+                </>
               ) : (
                 <Link href="/login" className="text-xs sm:text-sm font-bold text-gray-700 hover:text-red-600 flex items-center gap-1">
-                  <span className="text-xl">👤</span>
-                  <span className="hidden sm:inline">دخول</span>
+                  <span className="text-lg">👤</span>
+                  <span>دخول</span>
                 </Link>
               )}
             </div>
           </div>
         </div>
 
-        {/* الصف الثاني: شريط البحث (ضفنا z-[60] هون) */}
+        {/* الصف الثاني: شريط البحث */}
         <div className="w-full px-3 py-2 relative max-w-3xl mx-auto z-[60]">
           <form onSubmit={handleSearch} className="flex w-full">
             <input 
@@ -182,7 +185,6 @@ export default function Navbar({ siteName }: { siteName: string }) {
             <button type="submit" className="bg-red-600 text-white px-4 py-1.5 rounded-l-full font-bold text-sm hover:bg-red-700 transition-colors shrink-0">بحث</button>
           </form>
 
-          {/* القائمة المنسدلة (ضفنا z-[100] هون عشان تغطي كل شي) */}
           {showSuggestions && suggestions.length > 0 && (
             <ul className="absolute top-full left-3 right-3 bg-white border border-gray-200 rounded-b-lg shadow-2xl z-[100] max-h-60 overflow-y-auto mt-1">
               {suggestions.map((item) => (

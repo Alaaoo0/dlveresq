@@ -128,7 +128,7 @@ export default function Navbar({ siteName }: { siteName: string }) {
 
   return (
     <>
-      <header className="bg-white shadow-sm sticky top-0 z-50 border-b border-gray-200 flex flex-col w-full max-w-full overflow-x-hidden">
+      <header className="bg-white shadow-sm sticky top-0 z-50 border-b border-gray-200 flex flex-col w-full max-w-full">
         
         <div className="max-w-7xl mx-auto w-full px-3 py-2 flex items-center justify-between gap-2">
           <Link href="/" className="text-xl sm:text-2xl font-black text-red-600 tracking-tighter shrink-0 hover:scale-105 transition-transform">
@@ -199,7 +199,8 @@ export default function Navbar({ siteName }: { siteName: string }) {
 
         <div className="bg-gray-100 border-t border-gray-200">
           <div className="max-w-7xl mx-auto px-2 py-1.5 flex justify-center items-center gap-4 sm:gap-8">
-            {/* 👈 زر المتجر: صار يودي لصفحة المنتجات ويظهر الأقسام */}
+            
+            {/* 👈 زر المتجر هون: بيفتح ويقفل القائمة */}
             <button
               onClick={() => setIsMenuOpen(!isMenuOpen)}
               className="flex items-center gap-1 font-bold text-gray-800 hover:text-red-600 transition-colors text-xs sm:text-base"
@@ -217,19 +218,26 @@ export default function Navbar({ siteName }: { siteName: string }) {
           </div>
         </div>
 
+        {/* القائمة المنسدلة */}
         {isMenuOpen && (
-          <div className="bg-white border-t border-gray-200 shadow-lg absolute top-full left-0 w-full z-50">
-            <div className="max-w-7xl mx-auto p-3 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
-              {categories.map((cat: any) => (
-                <Link
-                  key={cat.id}
-                  href={`/products?category=${encodeURIComponent(cat.name)}`}
-                  onClick={() => setIsMenuOpen(false)}
-                  className="p-2 bg-gray-50 rounded-lg text-center font-semibold text-gray-700 hover:bg-red-50 hover:text-red-600 transition-colors border border-gray-100 text-sm"
-                >
-                  {cat.name}
-                </Link>
-              ))}
+          <div className="bg-white border-t border-gray-200 shadow-xl absolute top-full left-0 w-full z-50">
+            <div className="max-w-7xl mx-auto p-4">
+              <div className="flex items-center justify-between mb-4 border-b pb-2">
+                <h3 className="font-bold text-gray-800">تصفح الأقسام</h3>
+                <Link href="/products" className="text-sm text-blue-600 font-bold hover:underline">كل المنتجات ←</Link>
+              </div>
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                {categories.map((cat: any) => (
+                  <Link
+                    key={cat.id}
+                    href={`/products?category=${encodeURIComponent(cat.name)}`}
+                    onClick={() => setIsMenuOpen(false)}
+                    className="p-3 bg-gray-50 rounded-lg text-center font-semibold text-gray-700 hover:bg-red-50 hover:text-red-600 transition-colors border border-gray-100"
+                  >
+                    {cat.name}
+                  </Link>
+                ))}
+              </div>
             </div>
           </div>
         )}

@@ -28,11 +28,8 @@ export default function OffersPage() {
   return (
     <main className="max-w-5xl mx-auto p-4 md:p-8 mt-10 min-h-screen" dir="rtl">
       <div className="text-center mb-12">
-        <h1 className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-l from-red-600 to-orange-500 mb-4 flex items-center justify-center gap-3">
-          <svg className="w-10 h-10 text-red-600" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M21 11.25v8.25a1.5 1.5 0 01-1.5 1.5H5.25a1.5 1.5 0 01-1.5-1.5v-8.25M12 4.875A2.625 2.625 0 109.375 7.5H12m0-2.625V7.5m0-2.625A2.625 2.625 0 1114.625 7.5H12m0 0V21m-8.625-9.75h18c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125h-18c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z"></path>
-          </svg>
-          العروض والكوبونات
+        <h1 className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-l from-red-600 to-orange-500 mb-4 flex items-center justify-center gap-2">
+          <span className="text-4xl">🎁</span> العروض والكوبونات
         </h1>
         <p className="text-gray-500 text-lg">وفر أكثر مع كوبونات الخصم الحصرية. انسخ الكود واستخدمه عند الدفع!</p>
       </div>
@@ -40,12 +37,8 @@ export default function OffersPage() {
       {coupons.length === 0 ? (
         <div className="bg-gradient-to-br from-white to-red-50 p-10 text-center rounded-3xl shadow-sm border border-red-100 max-w-lg mx-auto">
           
-          {/* 👇 هون استبدلنا الإيموجي بأيقونة SVG احترافية */}
-          <div className="flex justify-center mb-6 animate-bounce">
-            <svg className="w-24 h-24 text-red-500 drop-shadow-md" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-              <path d="M20 12v10H4V12m16 0a2 2 0 0 0-2-2h-3.2a2 2 0 0 0-3.6 0H6a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V12zM12 7a2 2 0 1 1 2 2h-2V7zm0 0a2 2 0 1 0-2 2h2V7zM2 9h20v2H2V9z" />
-            </svg>
-          </div>
+          {/* 👇 رجعنا الإيموجي العادي هون */}
+          <p className="text-7xl mb-4 animate-bounce">🎁</p>
 
           <h2 className="text-2xl font-bold text-gray-800 mb-2">ما في عروض حالياً</h2>
           <p className="text-gray-500 mb-6">تابعنا قريباً، نحن دائماً نحضر لك المفاجآت الحصرية!</p>

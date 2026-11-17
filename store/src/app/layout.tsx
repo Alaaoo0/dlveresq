@@ -1,4 +1,3 @@
-
 import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
@@ -29,6 +28,7 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
+  userScalable: false, // 👈 عشان نمنع الزووم العشوائي على الموبايل
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
@@ -49,13 +49,14 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   }
 
   return (
-    <html lang="ar" dir="rtl">
-      <body className={inter.className}>
+    <html lang="ar" dir="rtl" className="overflow-x-hidden">
+      <body className={`${inter.className} overflow-x-hidden w-full max-w-[100vw]`}>
         <CartProvider>
           <WishlistProvider>
-            <div className="flex flex-col min-h-screen relative">
+            {/* 👈 ضفنا overflow-x-hidden هون كمان */}
+            <div className="flex flex-col min-h-screen relative overflow-x-hidden w-full">
               <Navbar siteName={settings?.siteName || "Ali-Boss"} />
-              <main className="flex-grow">{children}</main>
+              <main className="flex-grow w-full overflow-x-hidden">{children}</main>
               <Footer 
                 whatsapp={settings?.whatsapp || ""} 
                 email={settings?.email || ""} 

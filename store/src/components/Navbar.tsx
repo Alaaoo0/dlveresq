@@ -7,7 +7,7 @@ import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 
 export default function Navbar({ siteName }: { siteName: string }) {
-  const { cart = [] } = useCart() || {};
+  const { cart = [], clearCart } = useCart() || {}; // 👈 ضفنا clearCart
   const { wishlist = [] } = useWishlist() || {};
   const [mounted, setMounted] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -122,6 +122,12 @@ export default function Navbar({ siteName }: { siteName: string }) {
 
   const handleLogout = async () => {
     await fetch("/api/auth/logout", { method: "POST" });
+    
+    // 👈 هون بنمسح السلة والمفضلة
+    localStorage.removeItem('store_cart');
+    localStorage.removeItem('store_wishlist');
+    if (clearCart) clearCart();
+    
     setUser(null); 
     window.location.href = "/"; 
   };
@@ -130,15 +136,12 @@ export default function Navbar({ siteName }: { siteName: string }) {
     <>
       <header className="bg-white shadow-sm sticky top-0 z-50 border-b border-gray-200 flex flex-col w-full">
         
-        {/* الصف الأول: اللوجو والأيقونات والرصيد */}
         <div className="w-full px-3 py-2 flex flex-wrap items-center justify-between border-b border-gray-100 gap-y-2">
           
-          {/* اللوجو */}
           <Link href="/" className="text-xl sm:text-2xl font-black text-red-600 tracking-tighter shrink-0">
             {siteName}
           </Link>
 
-          {/* الأيقونات والرصيد */}
           <div className="flex items-center gap-2 sm:gap-3 flex-wrap justify-end">
             <Link href="/admin" className="text-gray-500 hover:text-red-600 text-lg sm:text-xl" title="الإدارة">⚙️</Link>
             <button onClick={subscribeToPush} className="text-gray-500 hover:text-red-600 text-lg sm:text-xl" title="الإشعارات">🔔</button>
@@ -154,7 +157,6 @@ export default function Navbar({ siteName }: { siteName: string }) {
             <div className="border-r border-gray-300 pr-2 flex items-center gap-2 ml-2">
               {mounted && user ? (
                 <>
-                  {/* الرصيد: كبرناه وشلنا الشرط اللي كان يخفيه */}
                   <Link href="/wallet" className="flex items-center gap-1 bg-green-100 text-green-800 px-3 py-1 rounded-full font-bold text-xs sm:text-sm whitespace-nowrap">
                     💳 ${Number(balance).toFixed(2)}
                   </Link>
@@ -170,7 +172,6 @@ export default function Navbar({ siteName }: { siteName: string }) {
           </div>
         </div>
 
-        {/* الصف الثاني: شريط البحث */}
         <div className="w-full px-3 py-2 relative max-w-3xl mx-auto z-[60]">
           <form onSubmit={handleSearch} className="flex w-full">
             <input 
@@ -203,7 +204,6 @@ export default function Navbar({ siteName }: { siteName: string }) {
           )}
         </div>
 
-        {/* الصف الثالث: أزرار التصفح */}
         <div className="bg-gray-50 border-t border-gray-200">
           <div className="max-w-7xl mx-auto px-2 py-1.5 flex justify-center items-center gap-6 sm:gap-10">
             <button
@@ -223,7 +223,6 @@ export default function Navbar({ siteName }: { siteName: string }) {
           </div>
         </div>
 
-        {/* القائمة المنسدلة للأقسام */}
         {isMenuOpen && (
           <div className="bg-white border-t border-gray-200 shadow-xl absolute top-full left-0 w-full z-50">
             <div className="max-w-7xl mx-auto p-4">

@@ -1,55 +1,25 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
-// ✅ تعريف واجهة تحدد نوع بيانات النموذج بشكل صريح
-interface ProductFormData {
-  name: string;
-  price: string;
-  stock: string;
-  weight: string;
-  imageUrl: string;
-  category: string;
-  shippingCost: string;
-}
+const categories = ["أجهزة الكترونية", "موضة نسائية", "موضة رجالية", "هواتف وإكسسوارات", "أدوات منزلية", "عطور", "ساعات", "رياضة", "ألعاب"];
 
 export default function AddProduct() {
   const router = useRouter();
-  const [categories, setCategories] = useState<any[]>([]);
-
-  // ✅ استخدام الواجهة لتحديد نوع useState
-  const [formData, setFormData] = useState<ProductFormData>({ 
-    name: "", 
-    price: "", 
-    stock: "", 
-    weight: "500", 
-    imageUrl: "", 
-    category: "",
-    shippingCost: "0"
-  });
-  
+  // 👈 ضفنا description
+  const [formData, setFormData] = useState({ name: "", price: "", stock: "", weight: "500", imageUrl: "", category: categories[0], description: "" });
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
-
-  useEffect(() => {
-    fetch("/api/categories")
-      .then(res => res.json())
-      .then(data => {
-        setCategories(data);
-        if (data.length > 0) {
-          setFormData(prev => ({ ...prev, category: data[0].name }));
-        }
-      })
-      .catch(err => console.error("Error fetching categories:", err));
-  }, []);
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
     setUploading(true);
     const uploadData = new FormData();
     uploadData.append("file", file);
+
     try {
       const res = await fetch("/api/upload", { method: "POST", body: uploadData });
       const data = await res.json();
@@ -64,25 +34,12 @@ export default function AddProduct() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    
-    try {
-      const res = await fetch("/api/products", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
-      });
-
-      if (res.ok) {
-        router.push("/admin");
-      } else {
-        const errorData = await res.json();
-        alert(`فشل الإضافة: ${errorData.message || 'تأكد من البيانات'}`);
-        setLoading(false);
-      }
-    } catch (error) {
-      alert("صار خطأ بالاتصال بالسيرفر");
-      setLoading(false);
-    }
+    await fetch("/api/products", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(formData),
+    });
+    router.push("/admin");
   };
 
   return (
@@ -98,21 +55,17 @@ export default function AddProduct() {
       <form onSubmit={handleSubmit} className="space-y-4">
         <input type="text" value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} className="w-full border p-3 rounded text-black" placeholder="اسم المنتج" required />
         
-        <select value={formData.category} onChange={(e) => setFormData({...formData, category: e.target.value})} className="w-full border p-3 rounded text-black bg-white">
-          {categories.length === 0 && <option value="">جاري تحميل الأقسام...</option>}
-          {categories.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
+        <select value={formData.category} onChange={(e) => setFormData({...formData, category: e.target.value})} className="w-full border p-3 rounded text-black">
+          {categories.map(c => <option key={c} value={c}>{c}</option>)}
         </select>
-        
+
+        {/* 👈 ضفنا مربع الوصف هون */}
+        <textarea value={formData.description} onChange={(e) => setFormData({...formData, description: e.target.value})} className="w-full border p-3 rounded text-black" placeholder="معلومات ووصف المنتج (اختياري)" rows={3}></textarea>
+
         <input type="number" step="0.01" value={formData.price} onChange={(e) => setFormData({...formData, price: e.target.value})} className="w-full border p-3 rounded text-black" placeholder="السعر بالدولار" required />
         <input type="number" value={formData.stock} onChange={(e) => setFormData({...formData, stock: e.target.value})} className="w-full border p-3 rounded text-black" placeholder="المخزون" required />
-        
-        <div className="bg-blue-50 border border-blue-200 p-3 rounded">
-          <label className="block text-sm font-bold text-blue-800 mb-2">تكلفة الشحن (بالدولار) - خليها 0 إذا كان مجاني</label>
-          <input type="number" step="0.01" value={formData.shippingCost} onChange={(e) => setFormData({...formData, shippingCost: e.target.value})} className="w-full border p-3 rounded text-black" placeholder="0" required />
-        </div>
-
         <input type="number" value={formData.weight} onChange={(e) => setFormData({...formData, weight: e.target.value})} className="w-full border p-3 rounded text-black" placeholder="الوزن بالغرام" required />
-        
+                
         <div className="border p-4 rounded bg-gray-50">
           <label className="block text-sm font-bold text-gray-700 mb-2">صورة المنتج</label>
           <input type="text" value={formData.imageUrl} onChange={(e) => setFormData({...formData, imageUrl: e.target.value})} className="w-full border p-2 rounded text-black mb-2" placeholder="أو الصق رابط الصورة هنا..." />

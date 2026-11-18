@@ -20,7 +20,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const addToCart = (product: any) => {
     setCart((prev) => {
       const existing = prev.find((item) => item.id === product.id);
-      const addQty = product.quantity || 1; 
+      const addQty = product.quantity || 1;
 
       if (existing) {
         return prev.map((item) =>
@@ -31,17 +31,20 @@ export function CartProvider({ children }: { children: ReactNode }) {
     });
   };
 
+  // 👈 دالة جديدة لتعديل الكمية
+  const updateQuantity = (id: string, newQty: number) => {
+    if (newQty < 1) return; // ما بنسمح بأقل من 1
+    setCart((prev) => 
+      prev.map(item => item.id === id ? { ...item, quantity: newQty } : item)
+    );
+  };
+
   const removeFromCart = (id: string) => setCart((prev) => prev.filter((item) => item.id !== id));
   const clearCart = () => setCart([]);
   const cartTotal = cart.reduce((total, item) => total + item.price * item.quantity, 0);
 
-  // ✅ دالة جديدة: استبدال السلة كاملة (عشان المشاركة)
-  const setCartFromShare = (sharedCart: any[]) => {
-    setCart(sharedCart);
-  };
-
   return (
-    <CartContext.Provider value={{ cart, addToCart, removeFromCart, clearCart, cartTotal, setCartFromShare }}>
+    <CartContext.Provider value={{ cart, addToCart, removeFromCart, clearCart, cartTotal, updateQuantity }}>
       {children}
     </CartContext.Provider>
   );

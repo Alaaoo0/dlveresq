@@ -10,9 +10,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ message: 'البيانات ناقصة' }, { status: 400 });
     }
 
-    const cookieStore = await cookies();
-    const userId = cookieStore.get('user_session')?.value;
-
+    // 1. نتأكد إنه في مخزون كافي
     const productIds = items.map((i: any) => i.id);
     const dbProducts = await prisma.product.findMany({ where: { id: { in: productIds } } });
 
@@ -23,15 +21,19 @@ export async function POST(req: Request) {
       }
     }
 
+    const cookieStore = await cookies();
+    const userId = cookieStore.get('user_session')?.value;
+    const totalInDollars = total / 100; // 👈 هون السر: منحول السنت لدولار
+
+    // 💳 2. فحص الرصيد
     if (userId) {
       const user = await prisma.user.findUnique({ where: { id: userId } });
-      if (!user) return NextResponse.json({ message: 'الزبون غير موجود' }, { status: 404 });
-
-      if (user.walletBalance < total) {
-        return NextResponse.json({ message: 'رصيد المحفظة غير كافٍ لإتمام الطلب.' }, { status: 400 });
+      if (!user || user.walletBalance < totalInDollars) { // 👈 فحصنا بالدولار
+        return NextResponse.json({ message: 'عذراً، رصيد محفظتك غير كافٍ لإتمام هذا الطلب. يرجى شحن المحفظة أولاً.' }, { status: 400 });
       }
     }
 
+    // 3. بنعمل الطلب وبننقص المخزون والرصيد
     const order = await prisma.$transaction(async (tx) => {
       const newOrder = await tx.order.create({
         data: {
@@ -67,13 +69,13 @@ export async function POST(req: Request) {
       if (userId) {
         await tx.user.update({
           where: { id: userId },
-          data: { walletBalance: { decrement: total } },
+          data: { walletBalance: { decrement: totalInDollars } }, // 👈 خصمنا بالدولار
         });
 
         await tx.walletTransaction.create({
           data: {
-            userId,
-            amount: total,
+            userId: userId,
+            amount: totalInDollars, // 👈 سجلنا العملية بالدولار
             type: 'WITHDRAW',
             status: 'APPROVED',
           },

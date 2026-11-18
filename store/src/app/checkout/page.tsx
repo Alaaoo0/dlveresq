@@ -14,9 +14,9 @@ export default function CheckoutPage() {
   const [success, setSuccess] = useState(false);
   const [isUserLoggedIn, setIsUserLoggedIn] = useState<boolean | null>(null); 
   
-  const [userBalance, setUserBalance] = useState(0);
+  const [userBalance, setUserBalance] = useState<number | null>(null);
   const [storeWhatsapp, setStoreWhatsapp] = useState("96170000000");
-  const [whatsappMessage, setWhatsappMessage] = useState(""); // 👈 بنحفظ الرسالة هون
+  const [whatsappMessage, setWhatsappMessage] = useState("");
 
   const [couponCode, setCouponCode] = useState("");
   const [appliedCoupon, setAppliedCoupon] = useState<any>(null);
@@ -91,7 +91,7 @@ export default function CheckoutPage() {
     if (!cart || cart.length === 0) return showModal("السلة فاضية!");
     if (!name || !phone || !address) return showModal("عبّي كل الحقول من فضلك");
 
-    if (userBalance < (finalTotal / 100)) {
+    if (userBalance !== null && userBalance < (finalTotal / 100)) {
       return showModal(`عذراً، رصيد محفظتك غير كافٍ. المطلوب: $${(finalTotal / 100).toFixed(2)}. لديك: $${userBalance.toFixed(2)}`);
     }
 
@@ -116,16 +116,25 @@ export default function CheckoutPage() {
       if (res.ok) {
         setSuccess(true);
         
-        // 👈 تجهيز رسالة الواتساب قبل ما نفضي السلة
         let msg = `طلب جديد\n\nالاسم: ${name}\nالهاتف: ${phone}\nالعنوان: ${address}\n\nالطلبات:\n`;
         cart.forEach((item: any) => { msg += `- ${item.name} × ${item.quantity} = $${((item.price * item.quantity) / 100).toFixed(2)}\n`; });
         if (appliedCoupon) msg += `\nالخصم (${appliedCoupon.code}): -$${(appliedCoupon.discountAmount / 100).toFixed(2)}`;
         if (totalShipping > 0) msg += `\nالشحن: $${(totalShipping / 100).toFixed(2)}`;
         msg += `\nالمجموع النهائي: $${(finalTotal / 100).toFixed(2)}`;
         
-        setWhatsappMessage(encodeURIComponent(msg));
+        const encodedMsg = encodeURIComponent(msg);
+        setWhatsappMessage(encodedMsg);
+
+        // 1. إرسال إشارة للناڤبار عشان يحدث الرصيد فوراً
+        window.dispatchEvent(new Event('refreshNavbar'));
 
         if (clearCart) clearCart();
+
+        // 2. محاولة فتح الواتساب تلقائياً بعد ثانية
+        setTimeout(() => {
+          window.open(`https://wa.me/${storeWhatsapp}?text=${encodedMsg}`, "_blank");
+        }, 1000);
+
       } else {
         showModal(data.message || "فشل الطلب، حاول مرة تانية.");
       }
@@ -135,10 +144,10 @@ export default function CheckoutPage() {
     setLoading(false);
   };
 
-  if (isUserLoggedIn === null) {
+  if (isUserLoggedIn === null || userBalance === null) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50" dir="rtl">
-        <p className="text-lg font-bold text-gray-600">جاري التحقق من الحساب...</p>
+        <p className="text-lg font-bold text-gray-600">جاري التحقق من الحساب والرصيد...</p>
       </div>
     );
   }
@@ -150,7 +159,7 @@ export default function CheckoutPage() {
         <h1 className="text-3xl font-black text-gray-900 mb-4">تم استلام طلبك بنجاح!</h1>
         <p className="text-gray-600 mb-8">تم خصم المبلغ من محفظتك، ورح نتواصل معك قريباً للتأكيد.</p>
         
-        {/* 👈 زر إرسال الواتساب هون */}
+        {/* زر الواتساب بيضل موجود كاحتياطي في حال المتصفح منع الفتح التلقائي */}
         <a 
           href={`https://wa.me/${storeWhatsapp}?text=${whatsappMessage}`}
           target="_blank"
@@ -180,12 +189,25 @@ export default function CheckoutPage() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           <div className="md:col-span-2 bg-white rounded-xl shadow-sm p-6 border border-gray-100">
             <h2 className="text-xl font-bold mb-6 text-gray-900">معلومات التوصيل</h2>
+            
+            <div className={`border p-4 rounded-xl mb-6 ${userBalance >= (finalTotal / 100) ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-gray-700 font-bold">رصيدك الحالي:</span>
+                <span className="text-2xl font-black text-gray-900">${userBalance.toFixed(2)}</span>
+              </div>
+              {userBalance >= (finalTotal / 100) ? (
+                <p className="text-sm text-green-600 font-bold">رصيدك كافٍ لإتمام الطلب.</p>
+              ) : (
+                <p className="text-sm text-red-600 font-bold">رصيدك غير كافٍ. المطلوب: ${(finalTotal / 100).toFixed(2)}. <Link href="/wallet" className="underline">اشحن رصيدك هلق</Link></p>
+              )}
+            </div>
+
             <form onSubmit={handleSubmit} className="space-y-5">
               <div><label className="block text-sm font-bold text-gray-700 mb-2">الاسم الكامل</label><input type="text" value={name} onChange={(e) => setName(e.target.value)} className="w-full border border-gray-300 rounded-lg p-3 text-black focus:ring-2 focus:ring-red-500 outline-none" placeholder="أدخل اسمك الثلاثي" /></div>
               <div><label className="block text-sm font-bold text-gray-700 mb-2">رقم الهاتف</label><input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} className="w-full border border-gray-300 rounded-lg p-3 text-black focus:ring-2 focus:ring-red-500 outline-none text-left" placeholder="مثال: 70123456" dir="ltr" /></div>
               <div><label className="block text-sm font-bold text-gray-700 mb-2">العنوان بالتفصيل</label><textarea value={address} onChange={(e) => setAddress(e.target.value)} rows={3} className="w-full border border-gray-300 rounded-lg p-3 text-black focus:ring-2 focus:ring-red-500 outline-none" placeholder="المدينة، الشارع..."></textarea></div>
-              <button type="submit" disabled={loading} className="w-full bg-red-600 text-white font-bold text-lg py-4 rounded-xl mt-4 hover:bg-red-700 transition-colors disabled:bg-gray-400">
-                {loading ? "جاري تأكيد الطلب..." : `تأكيد الطلب - $${(finalTotal / 100).toFixed(2)}`}
+              <button type="submit" disabled={loading || userBalance < (finalTotal / 100)} className="w-full bg-red-600 text-white font-bold text-lg py-4 rounded-xl mt-4 hover:bg-red-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed">
+                {loading ? "جاري تأكيد الطلب..." : userBalance < (finalTotal / 100) ? "الرصيد غير كافٍ" : `تأكيد الطلب - $${(finalTotal / 100).toFixed(2)}`}
               </button>
             </form>
           </div>

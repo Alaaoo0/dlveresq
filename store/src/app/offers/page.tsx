@@ -26,8 +26,12 @@ export default function OffersPage() {
   if (loading) return <p className="text-center mt-20 font-bold text-red-600">جاري تحميل العروض...</p>;
 
   return (
-    <main className="max-w-5xl mx-auto p-4 md:p-8 mt-10 min-h-screen" dir="rtl">
-      <div className="text-center mb-12">
+    <main className="max-w-5xl mx-auto p-4 md:p-8 mt-10 min-h-screen relative" dir="rtl">
+      
+      {/* خلفية خفيفة */}
+      <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-5 pointer-events-none"></div>
+
+      <div className="text-center mb-12 relative z-10">
         <h1 className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-l from-red-600 to-orange-500 mb-4 flex items-center justify-center gap-2">
           <span className="text-4xl">🎁</span> العروض والكوبونات
         </h1>
@@ -35,11 +39,8 @@ export default function OffersPage() {
       </div>
 
       {coupons.length === 0 ? (
-        <div className="bg-gradient-to-br from-white to-red-50 p-10 text-center rounded-3xl shadow-sm border border-red-100 max-w-lg mx-auto">
-          
-          {/* 👇 رجعنا الإيموجي العادي هون */}
+        <div className="bg-gradient-to-br from-white to-red-50 p-10 text-center rounded-3xl shadow-sm border border-red-100 max-w-lg mx-auto relative z-10">
           <p className="text-7xl mb-4 animate-bounce">🎁</p>
-
           <h2 className="text-2xl font-bold text-gray-800 mb-2">ما في عروض حالياً</h2>
           <p className="text-gray-500 mb-6">تابعنا قريباً، نحن دائماً نحضر لك المفاجآت الحصرية!</p>
           <Link href="/" className="inline-block bg-gradient-to-l from-red-600 to-orange-500 text-white px-8 py-3 rounded-full font-bold hover:shadow-lg transition-all transform hover:scale-105">
@@ -47,9 +48,9 @@ export default function OffersPage() {
           </Link>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 relative z-10">
           {coupons.map((coupon) => (
-            <div key={coupon.id} className="relative bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden group hover:-translate-y-1 transition-transform duration-300">
+            <div key={coupon.id} className="relative bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden group hover:-translate-y-1 transition-transform duration-300 flex flex-col">
               
               {/* الجزء العلوي (قيمة الخصم) */}
               <div className="bg-gradient-to-l from-red-600 via-red-500 to-orange-500 p-6 text-white text-center relative overflow-hidden">
@@ -68,49 +69,58 @@ export default function OffersPage() {
               </div>
 
               {/* الجزء السفلي (التفاصيل والكود) */}
-              <div className="p-6 pt-8 bg-white">
-                <div className="flex justify-between items-center text-sm text-gray-600 mb-4 bg-gray-50 p-3 rounded-lg">
-                  <div className="flex flex-col items-center">
-                    <span className="text-xs text-gray-400">الحد الأدنى</span>
-                    <span className="font-bold text-gray-800">${coupon.minOrderValue}</span>
+              <div className="p-6 pt-8 bg-white flex-1 flex flex-col justify-between">
+                <div>
+                  <div className="flex justify-between items-center text-sm text-gray-600 mb-4 bg-gray-50 p-3 rounded-lg">
+                    <div className="flex flex-col items-center">
+                      <span className="text-xs text-gray-400">الحد الأدنى</span>
+                      <span className="font-bold text-gray-800">${coupon.minOrderValue}</span>
+                    </div>
+                    <div className="w-px h-8 bg-gray-300"></div>
+                    <div className="flex flex-col items-center">
+                      <span className="text-xs text-gray-400">الاستخدامات</span>
+                      <span className="font-bold text-gray-800">{coupon.maxUses ? `${coupon.maxUses - coupon.usedCount} متبقي` : "غير محدود"}</span>
+                    </div>
+                    {coupon.expiresAt && (
+                      <>
+                        <div className="w-px h-8 bg-gray-300"></div>
+                        <div className="flex flex-col items-center">
+                          <span className="text-xs text-gray-400">ينتهي في</span>
+                          <span className="font-bold text-red-500">{new Date(coupon.expiresAt).toLocaleDateString('ar-LB')}</span>
+                        </div>
+                      </>
+                    )}
                   </div>
-                  <div className="w-px h-8 bg-gray-300"></div>
-                  <div className="flex flex-col items-center">
-                    <span className="text-xs text-gray-400">الاستخدامات</span>
-                    <span className="font-bold text-gray-800">{coupon.maxUses ? `${coupon.maxUses - coupon.usedCount} متبقي` : "غير محدود"}</span>
+                  
+                  {/* زر النسخ */}
+                  <div 
+                    onClick={() => copyToClipboard(coupon.code)}
+                    className={`border-2 border-dashed p-3 rounded-xl flex items-center justify-between cursor-pointer transition-all ${
+                      copiedCode === coupon.code 
+                        ? 'border-green-500 bg-green-50' 
+                        : 'border-red-300 bg-red-50 hover:bg-red-100'
+                    }`}
+                  >
+                    <span className={`text-sm font-bold ${copiedCode === coupon.code ? 'text-green-600' : 'text-red-600'}`}>
+                      {copiedCode === coupon.code ? 'تم النسخ بنجاح!' : 'اضغط لنسخ الكود'}
+                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xl font-mono font-black text-gray-900 tracking-widest bg-white px-3 py-1 rounded shadow-sm border border-gray-200">
+                        {coupon.code}
+                      </span>
+                      <span className="text-xl">{copiedCode === coupon.code ? '✅' : '📋'}</span>
+                    </div>
                   </div>
-                  {coupon.expiresAt && (
-                    <>
-                      <div className="w-px h-8 bg-gray-300"></div>
-                      <div className="flex flex-col items-center">
-                        <span className="text-xs text-gray-400">ينتهي في</span>
-                        <span className="font-bold text-red-500">{new Date(coupon.expiresAt).toLocaleDateString('ar-LB')}</span>
-                      </div>
-                    </>
-                  )}
                 </div>
-                
-                {/* زر النسخ */}
-                <div 
-                  onClick={() => copyToClipboard(coupon.code)}
-                  className="border-2 border-dashed border-red-300 bg-red-50 p-3 rounded-xl flex items-center justify-between cursor-pointer hover:bg-red-100 transition-colors"
-                >
-                  <span className="text-sm text-red-600 font-bold">اضغط لنسخ الكود</span>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xl font-mono font-black text-gray-900 tracking-widest bg-white px-3 py-1 rounded shadow-sm">{coupon.code}</span>
-                    <span className="text-red-500 text-xl">📋</span>
-                  </div>
-                </div>
+
+                {/* 👈 زر تسوق الآن */}
+                <Link href="/products" className="mt-4 w-full text-center bg-gray-900 text-white font-bold py-2 rounded-lg hover:bg-black transition-colors block">
+                  تسوق الآن واستخدم الكود
+                </Link>
+
               </div>
             </div>
           ))}
-        </div>
-      )}
-
-      {/* تنبيه النسخ */}
-      {copiedCode && (
-        <div className="fixed bottom-10 left-1/2 transform -translate-x-1/2 bg-gray-900 text-white px-8 py-4 rounded-full font-bold shadow-2xl z-50 animate-bounce flex items-center gap-2">
-          <span>✅</span> تم نسخ الكود: {copiedCode}
         </div>
       )}
     </main>

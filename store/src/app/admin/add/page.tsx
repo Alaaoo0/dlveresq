@@ -9,12 +9,10 @@ export default function AddProduct() {
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   
-  // 👇 حالات جديدة لجلب الأقسام من الداتابيز
   const [categories, setCategories] = useState<any[]>([]);
   const [fetchingCategories, setFetchingCategories] = useState(true);
 
   useEffect(() => {
-    // بنجيب الأقسام اللي إنت ضفتها من لوحة التحكم
     fetch("/api/categories")
       .then(res => res.json())
       .then(data => {
@@ -40,8 +38,8 @@ export default function AddProduct() {
       const data = await res.json();
       if (data.url) {
         setFormData({ ...formData, imageUrl: data.url });
-        alert("تم رفع الملف بنجاح!");
-      } else { alert("فشل رفع الملف"); }
+        alert("تم رفع الصورة بنجاح!");
+      } else { alert("فشل رفع الصورة"); }
     } catch (error) { alert("صار خطأ أثناء الرفع"); }
     setUploading(false);
   };
@@ -51,12 +49,26 @@ export default function AddProduct() {
     if (!formData.category) return alert("الرجاء اختيار قسم");
     
     setLoading(true);
-    await fetch("/api/products", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(formData),
-    });
-    router.push("/admin");
+    
+    try {
+      const res = await fetch("/api/products", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      });
+
+      if (res.ok) {
+        alert("تم إضافة المنتج بنجاح! 🎉");
+        // 👇 هون السر: بنعمل ريفريش كامل للصفحة عشان يجبر المتصفح يجيب المنتجات الجديدة
+        window.location.href = "/admin"; 
+      } else {
+        alert("فشل إضافة المنتج، حاول مرة تانية.");
+        setLoading(false);
+      }
+    } catch (error) {
+      alert("صار خطأ بالاتصال بالسيرفر.");
+      setLoading(false);
+    }
   };
 
   return (
@@ -72,7 +84,6 @@ export default function AddProduct() {
       <form onSubmit={handleSubmit} className="space-y-4">
         <input type="text" value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} className="w-full border p-3 rounded text-black" placeholder="اسم المنتج" required />
         
-        {/* 👇 قائمة الأقسام الديناميكية مع ألوان صح */}
         <select 
           value={formData.category} 
           onChange={(e) => setFormData({...formData, category: e.target.value})} 
@@ -104,7 +115,7 @@ export default function AddProduct() {
           <input type="text" value={formData.imageUrl} onChange={(e) => setFormData({...formData, imageUrl: e.target.value})} className="w-full border p-2 rounded text-black mb-2" placeholder="أو الصق رابط الصورة هنا..." />
           <p className="text-center text-gray-500 text-sm mb-2">- أو -</p>
           <input type="file" accept="image/*" onChange={handleFileUpload} className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" />
-          {uploading && <p className="text-blue-600 text-sm mt-2">جاري رفع الملف...</p>}
+          {uploading && <p className="text-blue-600 text-sm mt-2">جاري رفع الصورة...</p>}
         </div>
 
         <button type="submit" disabled={loading || uploading || categories.length === 0} className="w-full bg-green-600 text-white p-3 rounded font-bold hover:bg-green-700 disabled:bg-gray-400 mt-4">

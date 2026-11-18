@@ -14,8 +14,9 @@ export default function CheckoutPage() {
   const [success, setSuccess] = useState(false);
   const [isUserLoggedIn, setIsUserLoggedIn] = useState<boolean | null>(null); 
   
-  const [userBalance, setUserBalance] = useState(0); // 👈 حالة جديدة لجلب الرصيد
+  const [userBalance, setUserBalance] = useState(0);
   const [storeWhatsapp, setStoreWhatsapp] = useState("96170000000");
+  const [whatsappMessage, setWhatsappMessage] = useState(""); // 👈 بنحفظ الرسالة هون
 
   const [couponCode, setCouponCode] = useState("");
   const [appliedCoupon, setAppliedCoupon] = useState<any>(null);
@@ -44,7 +45,7 @@ export default function CheckoutPage() {
         if (data.user) {
           setIsUserLoggedIn(true);
           setName(data.user.name);
-          setUserBalance(data.user.walletBalance || 0); // 👈 بنجيب الرصيد الحقيقي
+          setUserBalance(data.user.walletBalance || 0);
         } else {
           setIsUserLoggedIn(false);
           router.push("/login");
@@ -90,7 +91,6 @@ export default function CheckoutPage() {
     if (!cart || cart.length === 0) return showModal("السلة فاضية!");
     if (!name || !phone || !address) return showModal("عبّي كل الحقول من فضلك");
 
-    // 👈 فحص الرصيد قبل الإرسال
     if (userBalance < (finalTotal / 100)) {
       return showModal(`عذراً، رصيد محفظتك غير كافٍ. المطلوب: $${(finalTotal / 100).toFixed(2)}. لديك: $${userBalance.toFixed(2)}`);
     }
@@ -115,15 +115,17 @@ export default function CheckoutPage() {
 
       if (res.ok) {
         setSuccess(true);
-        if (clearCart) clearCart();
         
+        // 👈 تجهيز رسالة الواتساب قبل ما نفضي السلة
         let msg = `طلب جديد\n\nالاسم: ${name}\nالهاتف: ${phone}\nالعنوان: ${address}\n\nالطلبات:\n`;
         cart.forEach((item: any) => { msg += `- ${item.name} × ${item.quantity} = $${((item.price * item.quantity) / 100).toFixed(2)}\n`; });
         if (appliedCoupon) msg += `\nالخصم (${appliedCoupon.code}): -$${(appliedCoupon.discountAmount / 100).toFixed(2)}`;
         if (totalShipping > 0) msg += `\nالشحن: $${(totalShipping / 100).toFixed(2)}`;
         msg += `\nالمجموع النهائي: $${(finalTotal / 100).toFixed(2)}`;
         
-        window.open(`https://wa.me/${storeWhatsapp}?text=${encodeURIComponent(msg)}`, "_blank");
+        setWhatsappMessage(encodeURIComponent(msg));
+
+        if (clearCart) clearCart();
       } else {
         showModal(data.message || "فشل الطلب، حاول مرة تانية.");
       }
@@ -147,7 +149,19 @@ export default function CheckoutPage() {
         <div className="text-6xl mb-4">🎉</div>
         <h1 className="text-3xl font-black text-gray-900 mb-4">تم استلام طلبك بنجاح!</h1>
         <p className="text-gray-600 mb-8">تم خصم المبلغ من محفظتك، ورح نتواصل معك قريباً للتأكيد.</p>
-        <Link href="/" className="bg-black text-white px-8 py-3 rounded-lg font-bold inline-block hover:bg-gray-800">العودة للمتجر</Link>
+        
+        {/* 👈 زر إرسال الواتساب هون */}
+        <a 
+          href={`https://wa.me/${storeWhatsapp}?text=${whatsappMessage}`}
+          target="_blank"
+          className="w-full bg-green-600 text-white font-bold text-lg py-4 rounded-xl mb-4 hover:bg-green-700 transition-colors flex items-center justify-center gap-2 shadow-lg"
+        >
+          <span>📱</span> إرسال تفاصيل الطلب عبر واتساب
+        </a>
+
+        <Link href="/" className="bg-gray-100 text-gray-800 px-8 py-3 rounded-lg font-bold inline-block hover:bg-gray-200 w-full transition-colors">
+          العودة للمتجر
+        </Link>
       </div>
     );
   }
@@ -183,7 +197,6 @@ export default function CheckoutPage() {
                 {cart.map((item: any) => (
                   <div key={item.id} className="flex justify-between text-sm py-2 border-b border-gray-50">
                     <div className="flex flex-col"><span className="font-semibold text-gray-800">{item.name}</span><span className="text-gray-500">الكمية: {item.quantity}</span></div>
-                    {/* 👈 غمقنا اللون هون */}
                     <span className="font-bold text-gray-800">${((item.price * item.quantity) / 100).toFixed(2)}</span>
                   </div>
                 ))}
@@ -202,7 +215,6 @@ export default function CheckoutPage() {
               </div>
 
               <div className="space-y-2 pt-4 border-t">
-                {/* 👈 غمقنا ألوان المجموع والشحن */}
                 <div className="flex justify-between text-gray-800 font-semibold"><span>المجموع الفرعي</span><span>${(cartTotal / 100).toFixed(2)}</span></div>
                 {appliedCoupon && <div className="flex justify-between text-green-600 font-bold"><span>الخصم</span><span>-${(appliedCoupon.discountAmount / 100).toFixed(2)}</span></div>}
                 

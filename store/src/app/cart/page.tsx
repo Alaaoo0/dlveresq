@@ -57,7 +57,6 @@ function CartContent() {
   return (
     <div className="max-w-4xl mx-auto p-4 mt-8" dir="rtl">
       
-      {/* 👈 زر الرجوع */}
       <div className="mb-6">
         <button onClick={() => router.back()} className="text-gray-600 hover:text-black font-bold flex items-center gap-2 text-sm">
           <span>←</span> رجوع
@@ -83,11 +82,23 @@ function CartContent() {
               )}
               <div>
                 <h2 className="font-semibold text-gray-800">{item.name}</h2>
-                {/* 👈 أزرار الكمية هون */}
                 <div className="flex items-center gap-3 mt-2">
-                  <button onClick={() => updateQuantity(item.id, item.quantity + 1)} className="w-7 h-7 bg-gray-100 rounded-full flex items-center justify-center text-gray-700 hover:bg-gray-200 font-bold">+</button>
+                  {/* 👈 زر + بيتعطل إذا الكمية وصلت للمخزون */}
+                  <button 
+                    onClick={() => updateQuantity(item.id, item.quantity + 1)} 
+                    disabled={item.stock !== undefined && item.quantity >= item.stock}
+                    className="w-7 h-7 bg-gray-100 rounded-full flex items-center justify-center text-gray-700 hover:bg-gray-200 font-bold disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    +
+                  </button>
                   <span className="text-sm font-bold text-gray-700 w-6 text-center">{item.quantity}</span>
-                  <button onClick={() => updateQuantity(item.id, item.quantity - 1)} disabled={item.quantity <= 1} className="w-7 h-7 bg-gray-100 rounded-full flex items-center justify-center text-gray-700 hover:bg-gray-200 font-bold disabled:opacity-50">-</button>
+                  <button 
+                    onClick={() => updateQuantity(item.id, item.quantity - 1)} 
+                    disabled={item.quantity <= 1} 
+                    className="w-7 h-7 bg-gray-100 rounded-full flex items-center justify-center text-gray-700 hover:bg-gray-200 font-bold disabled:opacity-50"
+                  >
+                    -
+                  </button>
                 </div>
               </div>
             </div>

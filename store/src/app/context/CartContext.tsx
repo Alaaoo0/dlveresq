@@ -21,21 +21,36 @@ export function CartProvider({ children }: { children: ReactNode }) {
     setCart((prev) => {
       const existing = prev.find((item) => item.id === product.id);
       const addQty = product.quantity || 1;
+      const maxStock = product.stock || 99;
 
       if (existing) {
+        const newQty = existing.quantity + addQty;
+        if (newQty > maxStock) {
+          alert(`عذراً، الكمية المتوفرة في المخزون هي ${maxStock} فقط.`);
+          return prev;
+        }
         return prev.map((item) =>
-          item.id === product.id ? { ...item, quantity: item.quantity + addQty } : item
+          item.id === product.id ? { ...item, quantity: newQty } : item
         );
       }
-      return [...prev, { ...product, quantity: addQty }];
+      return [...prev, { ...product, quantity: Math.min(addQty, maxStock) }];
     });
   };
 
-  // 👈 دالة جديدة لتعديل الكمية
   const updateQuantity = (id: string, newQty: number) => {
-    if (newQty < 1) return; // ما بنسمح بأقل من 1
-    setCart((prev) => 
-      prev.map(item => item.id === id ? { ...item, quantity: newQty } : item)
+    if (newQty < 1) return;
+    setCart((prev) =>
+      prev.map((item) => {
+        if (item.id === id) {
+          const maxStock = item.stock !== undefined ? item.stock : 99;
+          if (newQty > maxStock) {
+            alert(`عذراً، الكمية المتوفرة في المخزون هي ${maxStock} فقط.`);
+            return item;
+          }
+          return { ...item, quantity: newQty };
+        }
+        return item;
+      })
     );
   };
 

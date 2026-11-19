@@ -26,22 +26,22 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
   try {
     const { id } = await params;
     const body = await req.json();
-    const { name, price, stock, imageUrl, weight, shippingCost } = body;
+    // 👇 ضفنا variants هون
+    const { name, price, stock, imageUrl, weight, variants } = body;
 
     const product = await prisma.product.update({
       where: { id },
       data: {
         name,
-        price: Math.round(parseFloat(price) * 100),
+        price: Math.round(price * 100),
         stock: parseInt(stock),
-        weight: parseInt(weight) || 500,
-        imageUrl: imageUrl || null,
-        shippingCost: parseInt(shippingCost) || 0 // ✅ نضيف الشحن
+        weight: parseInt(weight),
+        imageUrl,
+        variants: variants || null, // 👈 وضفناها هون بالداتا
       },
     });
     return NextResponse.json(product);
-  } catch (error: any) {
-    console.error("EDIT ERROR:", error);
-    return NextResponse.json({ message: error.message || 'فشل التعديل' }, { status: 500 });
+  } catch (error) {
+    return NextResponse.json({ message: 'فشل التعديل' }, { status: 500 });
   }
 }

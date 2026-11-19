@@ -1,17 +1,17 @@
-"use client";
 import Link from "next/link";
-import { useState, useEffect } from "react";
+import { prisma } from "@/lib/prisma";
 
-export default function AboutPage() {
-  const [siteName, setSiteName] = useState("Ali-Boss");
+export const dynamic = 'force-dynamic'; // 👈 عشان نضمن إنه بيجيب الاسم الأحدث
 
-  useEffect(() => {
-    fetch("/api/settings")
-      .then(res => res.json())
-      .then(data => {
-        if (data.siteName) setSiteName(data.siteName);
-      });
-  }, []);
+export default async function AboutPage() {
+  let settings = null;
+  try {
+    settings = await prisma.settings.findUnique({ where: { id: 'global' } });
+  } catch (e) {
+    console.error("Error fetching settings for About page:", e);
+  }
+  
+  const siteName = settings?.siteName || "متجرنا"; // 👈 إذا ما في اسم، بيستخدم "متجرنا"
 
   return (
     <main className="max-w-7xl mx-auto p-4 md:p-8 mt-10 min-h-screen" dir="rtl">

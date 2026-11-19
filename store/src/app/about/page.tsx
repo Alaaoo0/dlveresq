@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 
-export const dynamic = 'force-dynamic'; // 👈 عشان نضمن إنه بيجيب الاسم الأحدث
+// 👈 شلنا سطر export const dynamic يلي كان بيعمل خطأ
 
 export default async function AboutPage() {
   let settings = null;
@@ -11,7 +11,7 @@ export default async function AboutPage() {
     console.error("Error fetching settings for About page:", e);
   }
   
-  const siteName = settings?.siteName || "متجرنا"; // 👈 إذا ما في اسم، بيستخدم "متجرنا"
+  const siteName = settings?.siteName || "متجرنا";
 
   return (
     <main className="max-w-7xl mx-auto p-4 md:p-8 mt-10 min-h-screen" dir="rtl">

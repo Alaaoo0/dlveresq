@@ -4,7 +4,7 @@ import { Suspense } from "react";
 import AddToCartButton from "./AddToCartButton";
 import { WishlistButton } from "../../components/WishlistButton";
 import ReviewSection from "../../components/ReviewSection";
-import BackButton from "../../components/BackButton"; // 👈 ضفنا زر الرجوع
+import BackButton from "../../components/BackButton";
 import { prisma } from "@/lib/prisma";
 
 export const instant = false;
@@ -20,27 +20,19 @@ async function ProductDetails({ searchParams }: { searchParams: Promise<{ slug?:
   if (!product) notFound();
 
   const isOutOfStock = product.stock <= 0;
-
   const relatedProducts = await prisma.product.findMany({
-    where: {
-      category: product.category,
-      id: { not: product.id },
-      stock: { gt: 0 }
-    },
+    where: { category: product.category, id: { not: product.id }, stock: { gt: 0 } },
     take: 4,
   });
 
   return (
     <div className="space-y-8">
-      
-      {/* 👈 هون ضفنا زر الرجوع */}
       <BackButton />
-
       <div className="bg-white rounded-xl shadow-sm p-4 md:p-8 grid grid-cols-1 md:grid-cols-2 gap-8 border border-gray-100 relative">
         <div>
           <div className="w-full h-80 md:h-[450px] bg-gray-50 rounded-xl overflow-hidden mb-4 border border-gray-100 relative group">
             {product.imageUrl ? (
-              <img src={product.imageUrl} alt={product.name} className={`w-full h-full object-contain group-hover:scale-105 transition-transform duration-500 ${isOutOfStock ? 'opacity-50' : ''}`} />
+              <img src={product.imageUrl} alt={product.name} className={`w-full h-full object-contain ${isOutOfStock ? 'opacity-50' : ''}`} />
             ) : (
               <div className="w-full h-full flex items-center justify-center text-gray-400">لا توجد صورة</div>
             )}
@@ -59,7 +51,6 @@ async function ProductDetails({ searchParams }: { searchParams: Promise<{ slug?:
               <WishlistButton product={product} />
             </div>
 
-            {/* 👈 عرض الوصف يلي ضفناه */}
             {product.description && (
               <p className="text-gray-600 text-sm mt-2 mb-4 bg-gray-50 p-3 rounded-lg border border-gray-100">{product.description}</p>
             )}
@@ -85,7 +76,7 @@ async function ProductDetails({ searchParams }: { searchParams: Promise<{ slug?:
             </div>
           </div>
 
-          <AddToCartButton product={product} />
+          <AddToCartButton product={product} variants={product.variants} />
         </div>
       </div>
 

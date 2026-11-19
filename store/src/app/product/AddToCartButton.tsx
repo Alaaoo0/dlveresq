@@ -1,23 +1,27 @@
 "use client";
 
-import { useCart } from "../../app/context/CartContext";
+import { useCart } from "../context/CartContext";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-export default function AddToCartButton({ product }: { product: any }) {
+export default function AddToCartButton({ product, variants }: { product: any, variants: string | null }) {
   const { addToCart } = useCart() || {};
   const [quantity, setQuantity] = useState(1);
+  const [selectedVariant, setSelectedVariant] = useState("");
   const router = useRouter();
 
   const isOutOfStock = product.stock <= 0;
-  
-  // ✅ حساب السعر الإجمالي بناءً على الكمية
-  const totalPrice = (product.price * quantity) / 100;
+  const variantList = variants ? variants.split(',').map(v => v.trim()).filter(Boolean) : [];
 
   const handleAdd = () => {
     if (isOutOfStock) return;
+    
+    if (variantList.length > 0 && !selectedVariant) {
+      return alert("الرجاء اختيار الخيار المناسب أولاً.");
+    }
+
     if (addToCart) {
-      addToCart({ ...product, quantity });
+      addToCart({ ...product, quantity, variant: selectedVariant });
       router.push("/cart");
     }
   };
@@ -25,8 +29,24 @@ export default function AddToCartButton({ product }: { product: any }) {
   return (
     <div className="space-y-4">
       {!isOutOfStock && (
-        <div className="flex items-center justify-between bg-gray-50 p-3 rounded-xl border border-gray-100">
-          <div className="flex items-center gap-3">
+        <>
+          {variantList.length > 0 && (
+            <div>
+              <label className="block text-sm font-bold text-gray-900 mb-2">اختر الخيار:</label>
+              <select 
+                value={selectedVariant} 
+                onChange={(e) => setSelectedVariant(e.target.value)}
+                className="w-full border-2 border-gray-300 rounded-lg p-3 text-black focus:border-red-500 outline-none cursor-pointer"
+              >
+                <option value="">-- اختر --</option>
+                {variantList.map((v, i) => (
+                  <option key={i} value={v}>{v}</option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          <div className="flex items-center gap-4">
             <span className="text-sm font-bold text-gray-900">الكمية:</span>
             <div className="flex items-center border border-gray-300 rounded-lg overflow-hidden bg-white">
               <button onClick={() => setQuantity(Math.max(1, quantity - 1))} className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-lg font-bold text-black">-</button>
@@ -34,13 +54,7 @@ export default function AddToCartButton({ product }: { product: any }) {
               <button onClick={() => setQuantity(Math.min(product.stock, quantity + 1))} className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-lg font-bold text-black">+</button>
             </div>
           </div>
-          
-          {/* ✅ عرض السعر الإجمالي للكمية المختارة */}
-          <div className="text-left">
-            <p className="text-xs text-gray-500 font-bold mb-1">السعر الإجمالي:</p>
-            <p className="text-2xl font-black text-red-600">${totalPrice.toFixed(2)}</p>
-          </div>
-        </div>
+        </>
       )}
 
       <button
@@ -52,11 +66,7 @@ export default function AddToCartButton({ product }: { product: any }) {
           : 'bg-red-600 text-white hover:bg-red-700 shadow-red-600/30'
         }`}
       >
-        {isOutOfStock ? (
-          'نفدت الكمية'
-        ) : (
-          <><span>🛒</span> أضف للسلة</>
-        )}
+        {isOutOfStock ? 'نفدت الكمية' : <><span>🛒</span> أضف للسلة</>}
       </button>
     </div>
   );

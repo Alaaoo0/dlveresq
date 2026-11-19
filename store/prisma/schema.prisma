@@ -8,19 +8,19 @@ datasource db {
 }
 
 model Product {
-  id           String      @id @default(cuid())
-  name         String
-  slug         String      @unique
-  description  String?
-  price        Int
-  weight       Int
-  imageUrl     String?
-  stock        Int         @default(10)
-  category     String      @default("أجهزة الكترونية")
-  shippingCost Int         @default(0) // 👈 ضفنا هاد السطر هون
-  createdAt    DateTime    @default(now())
-  orderItems   OrderItem[]
-  reviews      Review[]
+  id          String      @id @default(cuid())
+  name        String
+  slug        String      @unique
+  description String?
+  price       Int
+  weight      Int
+  imageUrl    String?
+  stock       Int         @default(10)
+  category    String      @default("أجهزة الكترونية")
+  variants    String?     // 👈 هاد الحقل الجديد للخيارات
+  createdAt   DateTime    @default(now())
+  orderItems  OrderItem[]
+  reviews     Review[]
 }
 
 model Order {
@@ -46,6 +46,7 @@ model OrderItem {
   productId String
   quantity  Int
   price     Int
+  variant   String? // 👈 هاد الحقل عشان نحفظ الخيار بالطلب
   order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
   product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
 }
@@ -73,7 +74,7 @@ model Settings {
   heroBtnText   String @default("تسوق الآن")
   discountBadge String @default("خصم 15%")
   whatsapp      String @default("96170000000")
-  whishNumber   String @default("0000000") // 👈 ضفنا هاد السطر لرقم الويش
+  whishNumber   String @default("0000000")
   email         String @default("info@aliboss.com")
 }
 
@@ -107,7 +108,7 @@ model User {
   name               String
   email              String              @unique
   password           String
-  phone              String?             // 👈 ضفنا حقل الهاتف هون
+  phone              String?
   walletBalance      Float               @default(0)
   createdAt          DateTime            @default(now())
   orders             Order[]

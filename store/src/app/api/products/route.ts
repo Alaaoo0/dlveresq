@@ -13,8 +13,7 @@ export async function GET() {
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    // 👈 ضفنا description
-    const { name, price, stock, imageUrl, weight, category, description } = body;
+    const { name, price, stock, imageUrl, weight, category, description, variants } = body;
     
     const slug = name.toLowerCase().replace(/[^a-z0-9-]/g, '-') + '-' + Date.now();
 
@@ -26,7 +25,8 @@ export async function POST(req: Request) {
         weight: parseInt(weight) || 500,
         imageUrl,
         category: category || "أجهزة الكترونية",
-        description: description || "" // 👈 بنحفظه
+        description: description || "",
+        variants: variants || null
       },
     });
     return NextResponse.json(product);

@@ -19,7 +19,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const addToCart = (product: any) => {
     setCart((prev) => {
-      const existing = prev.find((item) => item.id === product.id);
+      const cartItemId = product.variant ? `${product.id}-${product.variant}` : product.id;
+      const existing = prev.find((item) => item.cartItemId === cartItemId);
+      
       const addQty = product.quantity || 1;
       const maxStock = product.stock || 99;
 
@@ -30,18 +32,18 @@ export function CartProvider({ children }: { children: ReactNode }) {
           return prev;
         }
         return prev.map((item) =>
-          item.id === product.id ? { ...item, quantity: newQty } : item
+          item.cartItemId === cartItemId ? { ...item, quantity: newQty } : item
         );
       }
-      return [...prev, { ...product, quantity: Math.min(addQty, maxStock) }];
+      return [...prev, { ...product, quantity: Math.min(addQty, maxStock), cartItemId }];
     });
   };
 
-  const updateQuantity = (id: string, newQty: number) => {
+  const updateQuantity = (cartItemId: string, newQty: number) => {
     if (newQty < 1) return;
     setCart((prev) =>
       prev.map((item) => {
-        if (item.id === id) {
+        if (item.cartItemId === cartItemId) {
           const maxStock = item.stock !== undefined ? item.stock : 99;
           if (newQty > maxStock) {
             alert(`عذراً، الكمية المتوفرة في المخزون هي ${maxStock} فقط.`);
@@ -54,7 +56,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     );
   };
 
-  const removeFromCart = (id: string) => setCart((prev) => prev.filter((item) => item.id !== id));
+  const removeFromCart = (cartItemId: string) => setCart((prev) => prev.filter((item) => item.cartItemId !== cartItemId));
   const clearCart = () => setCart([]);
   const cartTotal = cart.reduce((total, item) => total + item.price * item.quantity, 0);
 

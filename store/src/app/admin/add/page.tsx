@@ -5,7 +5,7 @@ import Link from "next/link";
 
 export default function AddProduct() {
   const router = useRouter();
-  const [formData, setFormData] = useState({ name: "", price: "", stock: "", weight: "500", imageUrl: "", category: "", description: "" });
+  const [formData, setFormData] = useState({ name: "", price: "", stock: "", weight: "500", imageUrl: "", category: "", description: "", variants: "" });
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   
@@ -17,9 +17,7 @@ export default function AddProduct() {
       .then(res => res.json())
       .then(data => {
         setCategories(data);
-        if (data.length > 0) {
-          setFormData(prev => ({ ...prev, category: data[0].name }));
-        }
+        if (data.length > 0) setFormData(prev => ({ ...prev, category: data[0].name }));
         setFetchingCategories(false);
       })
       .catch(() => setFetchingCategories(false));
@@ -28,11 +26,9 @@ export default function AddProduct() {
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
     setUploading(true);
     const uploadData = new FormData();
     uploadData.append("file", file);
-
     try {
       const res = await fetch("/api/upload", { method: "POST", body: uploadData });
       const data = await res.json();
@@ -49,7 +45,6 @@ export default function AddProduct() {
     if (!formData.category) return alert("الرجاء اختيار قسم");
     
     setLoading(true);
-    
     try {
       const res = await fetch("/api/products", {
         method: "POST",
@@ -59,14 +54,13 @@ export default function AddProduct() {
 
       if (res.ok) {
         alert("تم إضافة المنتج بنجاح! 🎉");
-        // 👇 هون السر: بنعمل ريفريش كامل للصفحة عشان يجبر المتصفح يجيب المنتجات الجديدة
         window.location.href = "/admin"; 
       } else {
-        alert("فشل إضافة المنتج، حاول مرة تانية.");
+        alert("فشل إضافة المنتج.");
         setLoading(false);
       }
     } catch (error) {
-      alert("صار خطأ بالاتصال بالسيرفر.");
+      alert("صار خطأ بالاتصال.");
       setLoading(false);
     }
   };
@@ -84,27 +78,22 @@ export default function AddProduct() {
       <form onSubmit={handleSubmit} className="space-y-4">
         <input type="text" value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} className="w-full border p-3 rounded text-black" placeholder="اسم المنتج" required />
         
-        <select 
-          value={formData.category} 
-          onChange={(e) => setFormData({...formData, category: e.target.value})} 
-          className="w-full border p-3 rounded text-black bg-white appearance-none cursor-pointer"
-          required
-          disabled={fetchingCategories || categories.length === 0}
-        >
-          {fetchingCategories ? (
-            <option value="">جاري تحميل الأقسام...</option>
-          ) : categories.length === 0 ? (
-            <option value="">ما في أقسام، ضيف قسم أولاً</option>
-          ) : (
-            categories.map((cat: any) => (
-              <option key={cat.id} value={cat.name} className="text-black bg-white">
-                {cat.name}
-              </option>
-            ))
-          )}
+        <select value={formData.category} onChange={(e) => setFormData({...formData, category: e.target.value})} className="w-full border p-3 rounded text-black bg-white" required disabled={fetchingCategories || categories.length === 0}>
+          {fetchingCategories ? <option value="">جاري تحميل الأقسام...</option> : categories.map((cat: any) => <option key={cat.id} value={cat.name} className="text-black">{cat.name}</option>)}
         </select>
 
         <textarea value={formData.description} onChange={(e) => setFormData({...formData, description: e.target.value})} className="w-full border p-3 rounded text-black" placeholder="معلومات ووصف المنتج (اختياري)" rows={3}></textarea>
+
+        <div className="bg-blue-50 border border-blue-200 p-3 rounded-lg">
+          <label className="block text-sm font-bold text-blue-900 mb-1">خيارات المنتج (مقاسات أو ألوان)</label>
+          <input 
+            type="text" 
+            value={formData.variants} 
+            onChange={(e) => setFormData({...formData, variants: e.target.value})} 
+            className="w-full border p-2 rounded text-black" 
+            placeholder="مثال: أحمر, أزرق, أخضر (افصل بينهم بفاصلة)" 
+          />
+        </div>
 
         <input type="number" step="0.01" value={formData.price} onChange={(e) => setFormData({...formData, price: e.target.value})} className="w-full border p-3 rounded text-black" placeholder="السعر بالدولار" required />
         <input type="number" value={formData.stock} onChange={(e) => setFormData({...formData, stock: e.target.value})} className="w-full border p-3 rounded text-black" placeholder="المخزون" required />
@@ -113,8 +102,7 @@ export default function AddProduct() {
         <div className="border p-4 rounded bg-gray-50">
           <label className="block text-sm font-bold text-gray-700 mb-2">صورة المنتج</label>
           <input type="text" value={formData.imageUrl} onChange={(e) => setFormData({...formData, imageUrl: e.target.value})} className="w-full border p-2 rounded text-black mb-2" placeholder="أو الصق رابط الصورة هنا..." />
-          <p className="text-center text-gray-500 text-sm mb-2">- أو -</p>
-          <input type="file" accept="image/*" onChange={handleFileUpload} className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" />
+          <input type="file" accept="image/*" onChange={handleFileUpload} className="w-full text-sm text-gray-500" />
           {uploading && <p className="text-blue-600 text-sm mt-2">جاري رفع الصورة...</p>}
         </div>
 

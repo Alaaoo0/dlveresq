@@ -13,6 +13,15 @@ export default function LoginPage() {
     const res = await fetch("/api/auth/login", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email, password }) });
     
     if (res.ok) { 
+      // 👇 هون بنرجع السلة والمفضلة يلي كنا خبيناهم
+      const savedCart = localStorage.getItem("saved_cart");
+      if (savedCart) localStorage.setItem("store_cart", savedCart);
+      localStorage.removeItem("saved_cart");
+
+      const savedWishlist = localStorage.getItem("saved_wishlist");
+      if (savedWishlist) localStorage.setItem("store_wishlist", savedWishlist);
+      localStorage.removeItem("saved_wishlist");
+
       window.location.href = "/";
     } else { 
       const data = await res.json(); 

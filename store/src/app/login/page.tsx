@@ -13,14 +13,16 @@ export default function LoginPage() {
     const res = await fetch("/api/auth/login", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email, password }) });
     
     if (res.ok) { 
-      // 👇 هون بنرجع السلة والمفضلة يلي كنا خبيناهم
-      const savedCart = localStorage.getItem("saved_cart");
-      if (savedCart) localStorage.setItem("store_cart", savedCart);
-      localStorage.removeItem("saved_cart");
+      // 👇 هون بنظف أي سلة قديمة موجودة حالياً بالجهاز
+      localStorage.removeItem("store_cart");
+      localStorage.removeItem("store_wishlist");
 
-      const savedWishlist = localStorage.getItem("saved_wishlist");
+      // 👇 وبنرجع بس السلة والمفضلة الخاصة بهالإيميل
+      const savedCart = localStorage.getItem(`saved_cart_${email}`);
+      if (savedCart) localStorage.setItem("store_cart", savedCart);
+
+      const savedWishlist = localStorage.getItem(`saved_wishlist_${email}`);
       if (savedWishlist) localStorage.setItem("store_wishlist", savedWishlist);
-      localStorage.removeItem("saved_wishlist");
 
       window.location.href = "/";
     } else { 
@@ -35,7 +37,7 @@ export default function LoginPage() {
         <h1 className="text-2xl font-bold text-gray-900 mb-6 text-center">تسجيل الدخول</h1>
         <form onSubmit={handleSubmit} className="space-y-4">
           <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="الإيميل" className="w-full border p-3 rounded-lg text-black" dir="ltr" required />
-          <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="كلمة المرور" className="w-full border p-3 rounded-lg text-black" dir="ltr" required />
+          <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="كلمة المرور" className="w-full p-3 rounded-lg text-black" dir="ltr" required />
           {error && <p className="text-red-500 text-sm">{error}</p>}
           <button type="submit" className="w-full bg-black text-white p-3 rounded-lg font-bold hover:bg-gray-800">دخول</button>
         </form>

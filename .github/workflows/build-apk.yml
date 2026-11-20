@@ -10,93 +10,71 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
         node-version: '20'
 
-    - name: Install Bubblewrap
-      run: npm install -g @nicolo-ribaudo/chokidar-2 @nicolo-ribaudo/chokidar-2
+    - name: Install jq
+      run: sudo apt-get install -y jq
 
-    - name: Setup Java
-      uses: actions/setup-java@v4
-      with:
-        distribution: 'temurin'
-        java-version: '17'
-
-    - name: Install Bubblewrap CLI
+    - name: Start PWA Builder Packaging
+      id: start
       run: |
-        npm install -g @nicolo-ribaudo/chokidar-2 2>/dev/null || true
-        curl -L "https://github.com/nicolo-ribaudo/chokidar-2/releases/download/v1.0.0/bubblewrap-cli-linux" -o /usr/local/bin/bubblewrap || true
-        chmod +x /usr/local/bin/bubblewrap || true
+        RESPONSE=$(curl -s -X POST "https://pwabuilder-cloud-packaging.azurewebsites.net/api/packages" \
+          -H "Content-Type: application/json" \
+          -d '{
+            "platformId": "android",
+            "siteId": "my-store",
+            "siteUrl": "https://my-store-alaa-3a8a.vercel.app",
+            "generatorType": "PWABuilder",
+            "packageId": "com.alaaoo0.mystore",
+            "appName": "تسوق الآن",
+            "appVersionName": "1.0.0",
+            "appVersionCode": 1
+          }')
+        echo "Response: $RESPONSE"
+        JOB_ID=$(echo "$RESPONSE" | jq -r '.id')
+        echo "job_id=$JOB_ID" >> $GITHUB_OUTPUT
+        echo "✅ Job started: $JOB_ID"
 
-    - name: Create TWA Project
+    - name: Wait for Build to Complete
       run: |
-        mkdir -p twa-project
-        cd twa-project
-        
-        cat > twa-manifest.json << 'EOF'
-        {
-          "packageId": "com.alaaoo0.mystore",
-          "host": "my-store-alaa-3a8a.vercel.app",
-          "name": "تسوق الآن",
-          "launcherName": "تسوق الآن",
-          "display": "standalone",
-          "themeColor": "#dc2626",
-          "backgroundColor": "#dc2626",
-          "enableNotifications": true,
-          "startUrl": "/",
-          "iconUrl": "https://my-store-alaa-3a8a.vercel.app/icon-512.png",
-          "splashScreenFadeOutDuration": 300,
-          "signingKey": {
-            "path": "android.keystore",
-            "alias": "android"
-          },
-          "appVersionName": "1.0.0",
-          "appVersionCode": 1,
-          "shortcuts": [],
-          "generatorApp": "github-actions",
-          "webManifestUrl": "https://my-store-alaa-3a8a.vercel.app/manifest.json",
-          "fallbackType": "customtabs",
-          "enableSiteSettingsShortcut": true,
-          "isChromeOSOnly": false,
-          "fullScopeUrl": "https://my-store-alaa-3a8a.vercel.app/",
-          "appVersion": "1.0.0",
-          "alphaDependencies": {
-            "enabled": false
-          },
-          "enableFingerprint": false,
-          "retainedBundles": 0,
-          "appVersionCodeScheme": "semver",
-          "shareTarget": {
-            "enabled": false
-          },
-          "additionalTrustedOrigins": [],
-          "enabledFeatures": [],
-          "arch": "arm64"
-        }
-        EOF
-        
-        echo "✅ TWA Manifest created"
+        JOB_ID="${{ steps.start.outputs.job_id }}"
+        STATUS=""
+        for i in $(seq 1 30); do
+          RESPONSE=$(curl -s "https://pwabuilder-cloud-packaging.azurewebsites.net/api/packages/$JOB_ID")
+          STATUS=$(echo "$RESPONSE" | jq -r '.status')
+          echo "Attempt $i - Status: $STATUS"
+          if [ "$STATUS" = "completed" ]; then
+            echo "✅ Build completed!"
+            break
+          fi
+          if [ "$STATUS" = "error" ] || [ "$STATUS" = "failed" ]; then
+            echo "❌ Build failed!"
+            echo "$RESPONSE"
+            exit 1
+          fi
+          sleep 10
+        done
+        if [ "$STATUS" != "completed" ]; then
+          echo "❌ Build timed out"
+          exit 1
+        fi
 
-    - name: Generate Signing Key
+    - name: Download APK Package
       run: |
-        cd twa-project
-        keytool -genkey -v -keystore android.keystore -alias android -keyalg RSA -keysize 2048 -validity 10000 -storepass android123 -keypass android123 -dname "CN=Alaaoo0, OU=MyStore, O=MyStore, L=Beirut, S=Lebanon, C=LB"
-        echo "✅ Signing key generated"
-
-    - name: Build APK with Bubblewrap
-      run: |
-        cd twa-project
-        bubblewrap init --manifest=twa-manifest.json --directory=. || true
-        bubblewrap build || true
-        echo "✅ APK build attempted"
+        JOB_ID="${{ steps.start.outputs.job_id }}"
+        RESPONSE=$(curl -s "https://pwabuilder-cloud-packaging.azurewebsites.net/api/packages/$JOB_ID")
+        DOWNLOAD_URL=$(echo "$RESPONSE" | jq -r '.downloadUrl')
+        echo "Download URL: $DOWNLOAD_URL"
+        curl -s -L -o package.zip "$DOWNLOAD_URL"
+        unzip -o package.zip -d apk-output/
+        ls -la apk-output/
 
     - name: Upload APK
       uses: actions/upload-artifact@v4
       with:
         name: android-apk
-        path: twa-project/**/*.apk
+        path: apk-output/
+        if-no-files-found: error

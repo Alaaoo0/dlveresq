@@ -132,14 +132,16 @@ export default function Navbar({ siteName }: { siteName: string }) {
   };
 
   const handleLogout = async () => {
-    // 👇 بنحفظ السلة والمفضلة بمكان مخفي قبل الخروج
-    const currentCart = localStorage.getItem("store_cart");
-    if (currentCart) localStorage.setItem("saved_cart", currentCart);
-    localStorage.removeItem("store_cart");
+    // 👇 هون التعديل: بنحفظ السلة والمفضلة مرتبطين بإيميل المستخدم
+    if (user && user.email) {
+      const currentCart = localStorage.getItem("store_cart");
+      if (currentCart) localStorage.setItem(`saved_cart_${user.email}`, currentCart);
+      localStorage.removeItem("store_cart");
 
-    const currentWishlist = localStorage.getItem("store_wishlist");
-    if (currentWishlist) localStorage.setItem("saved_wishlist", currentWishlist);
-    localStorage.removeItem("store_wishlist");
+      const currentWishlist = localStorage.getItem("store_wishlist");
+      if (currentWishlist) localStorage.setItem(`saved_wishlist_${user.email}`, currentWishlist);
+      localStorage.removeItem("store_wishlist");
+    }
 
     await fetch("/api/auth/logout", { method: "POST" });
     setUser(null); 

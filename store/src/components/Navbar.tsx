@@ -7,7 +7,7 @@ import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 
 export default function Navbar({ siteName }: { siteName: string }) {
-  const { cart = [], clearCart } = useCart() || {};
+  const { cart = [] } = useCart() || {};
   const { wishlist = [] } = useWishlist() || {};
   const [mounted, setMounted] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -31,7 +31,6 @@ export default function Navbar({ siteName }: { siteName: string }) {
     setModalOpen(true);
   };
 
-  // 👇 دالة جلب بيانات المستخدم والرصيد (عشان نقدر نستدعيها من أي مكان)
   const fetchUserData = () => {
     fetch("/api/auth/me", { cache: 'no-store' })
       .then(res => res.json())
@@ -59,7 +58,6 @@ export default function Navbar({ siteName }: { siteName: string }) {
         .catch((err) => console.error('Service Worker Error:', err));
     }
 
-    // 👇 هون بنسمع للإشارة يلي بتيجي من صفحة الدفع بعد نجاح الطلب
     const handleRefresh = () => fetchUserData();
     window.addEventListener('refreshNavbar', handleRefresh);
 
@@ -135,9 +133,7 @@ export default function Navbar({ siteName }: { siteName: string }) {
 
   const handleLogout = async () => {
     await fetch("/api/auth/logout", { method: "POST" });
-    localStorage.removeItem('store_cart');
-    localStorage.removeItem('store_wishlist');
-    if (clearCart) clearCart();
+    // 👇 شلنا أوامر مسح السلة والمفضلة من هون عشان يضلوا محفوظين
     setUser(null); 
     window.location.href = "/"; 
   };

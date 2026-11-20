@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Tajawal } from "next/font/google";
+import { Inter } from "next/font/google";
 import "./globals.css";
 import { CartProvider } from "./context/CartContext";
 import { WishlistProvider } from "../context/WishlistContext";
@@ -9,12 +9,9 @@ import NotificationPopup from "../components/NotificationPopup";
 import PWAInstaller from "../components/PWAInstaller";
 import { prisma } from "@/lib/prisma";
 
-// استخدام خط عربي احترافي (تجوال) بدلاً من Inter لدعم اللغة العربية بشكل ممتاز
-const tajawal = Tajawal({
-  subsets: ["arabic", "latin"],
-  weight: ["400", "500", "700", "800"],
-  variable: "--font-tajawal",
-});
+export const instant = false;
+
+const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "تسوق الآن",
@@ -22,10 +19,10 @@ export const metadata: Metadata = {
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
-    statusBarStyle: "black-translucent", // يجعل شريط الحالة مدمجاً بشكل أجمل في iOS
+    statusBarStyle: "default",
     title: "تسوق الآن",
   },
-  // ضمان ظهور الأيقونة عند إضافة الموقع للشاشة الرئيسية في iOS و Android
+  // ✅ الإضافة 1: أيقونة التطبيق (للتثبيت على الهاتف)
   icons: {
     icon: "/icon-192.png",
     apple: "/icon-192.png",
@@ -33,24 +30,23 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#dc2626", // لون شريط الحالة العلوي في الهاتف
+  themeColor: "#dc2626",
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
-  userScalable: false, // منع التكبير بالضغط المزدوج ليبدو كتطبيق أصلي (Native App)
+  userScalable: false,
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  let settings;
-  
-  // استخدام try-catch لمنع انهيار الصفحة في حال وجود مشكلة مؤقتة في Prisma
+  let settings = null;
+
+  // ✅ الإضافة 2: حماية الصفحة من انهيار قاعدة البيانات
   try {
     settings = await prisma.settings.findUnique({ where: { id: 'global' } });
   } catch (error) {
     console.error("فشل في جلب إعدادات الموقع:", error);
   }
 
-  // قيم افتراضية آمنة في حال لم تكن الإعدادات موجودة في قاعدة البيانات
   if (!settings) {
     settings = { 
       id: 'global', 
@@ -66,26 +62,19 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   }
 
   return (
-    <html lang="ar" dir="rtl" className={`${tajawal.variable} font-sans overflow-x-hidden`}>
-      <body className="overflow-x-hidden w-full max-w-[100vw] bg-white text-gray-900 antialiased">
-        {/* مكون تثبيت تطبيق الويب التقدمي */}
+    <html lang="ar" dir="rtl" className="overflow-x-hidden">
+      <body className={`${inter.className} overflow-x-hidden w-full max-w-[100vw]`}>
         <PWAInstaller />
-        
         <CartProvider>
           <WishlistProvider>
-            <div className="flex flex-col min-h-screen w-full">
-              <Navbar siteName={settings.siteName} />
-              
-              <main className="flex-grow w-full">
-                {children}
-              </main>
-              
+            <div className="flex flex-col min-h-screen relative overflow-x-hidden w-full">
+              <Navbar siteName={settings?.siteName || "تسوق الآن"} />
+              <main className="flex-grow w-full overflow-x-hidden">{children}</main>
               <Footer 
-                whatsapp={settings.whatsapp} 
-                email={settings.email} 
-                siteName={settings.siteName} 
+                whatsapp={settings?.whatsapp || ""} 
+                email={settings?.email || ""} 
+                siteName={settings?.siteName || "تسوق الآن"} 
               />
-              
               <NotificationPopup />
             </div>
           </WishlistProvider>

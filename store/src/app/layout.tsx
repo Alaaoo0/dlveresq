@@ -1,5 +1,3 @@
-export const dynamic = 'force-dynamic';
-
 import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
@@ -8,8 +6,10 @@ import { WishlistProvider } from "../context/WishlistContext";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import NotificationPopup from "../components/NotificationPopup";
-import SplashScreen from "../components/SplashScreen"; // 👈 ضفنا شاشة الترحيب
+import SplashScreen from "../components/SplashScreen";
 import { prisma } from "@/lib/prisma";
+
+// 👈 شلنا سطر export const dynamic = 'force-dynamic'; من هون عشان ما يعمل خطأ
 
 export const instant = false;
 
@@ -53,7 +53,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   return (
     <html lang="ar" dir="rtl">
       <body className={inter.className}>
-        {/* 👇 هون ركبنا شاشة الترحيب عشان تشتغل أول ما يفتح الموقع */}
+        
         <SplashScreen siteName={settings?.siteName || "Ali-Boss"} />
 
         <CartProvider>

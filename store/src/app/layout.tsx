@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
@@ -6,7 +8,7 @@ import { WishlistProvider } from "../context/WishlistContext";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import NotificationPopup from "../components/NotificationPopup";
-import PWAInstaller from "../components/PWAInstaller";
+import SplashScreen from "../components/SplashScreen"; // 👈 ضفنا شاشة الترحيب
 import { prisma } from "@/lib/prisma";
 
 export const instant = false;
@@ -14,18 +16,13 @@ export const instant = false;
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "تسوق الآن",
+  title: "Ali-Boss | متجرك الأول",
   description: "أفضل المنتجات بأفضل الأسعار",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "تسوق الآن",
-  },
-  // ✅ الإضافة 1: أيقونة التطبيق (للتثبيت على الهاتف)
-  icons: {
-    icon: "/icon-192.png",
-    apple: "/icon-192.png",
+    title: "Ali-Boss",
   },
 };
 
@@ -34,23 +31,15 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
-  userScalable: false,
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  let settings = null;
-
-  // ✅ الإضافة 2: حماية الصفحة من انهيار قاعدة البيانات
-  try {
-    settings = await prisma.settings.findUnique({ where: { id: 'global' } });
-  } catch (error) {
-    console.error("فشل في جلب إعدادات الموقع:", error);
-  }
-
+  let settings = await prisma.settings.findUnique({ where: { id: 'global' } });
+  
   if (!settings) {
     settings = { 
       id: 'global', 
-      siteName: 'تسوق الآن', 
+      siteName: 'Ali-Boss', 
       heroTitle: '', 
       heroSubtitle: '', 
       heroBtnText: '', 
@@ -62,18 +51,20 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   }
 
   return (
-    <html lang="ar" dir="rtl" className="overflow-x-hidden">
-      <body className={`${inter.className} overflow-x-hidden w-full max-w-[100vw]`}>
-        <PWAInstaller />
+    <html lang="ar" dir="rtl">
+      <body className={inter.className}>
+        {/* 👇 هون ركبنا شاشة الترحيب عشان تشتغل أول ما يفتح الموقع */}
+        <SplashScreen siteName={settings?.siteName || "Ali-Boss"} />
+
         <CartProvider>
           <WishlistProvider>
-            <div className="flex flex-col min-h-screen relative overflow-x-hidden w-full">
-              <Navbar siteName={settings?.siteName || "تسوق الآن"} />
-              <main className="flex-grow w-full overflow-x-hidden">{children}</main>
+            <div className="flex flex-col min-h-screen relative">
+              <Navbar siteName={settings?.siteName || "Ali-Boss"} />
+              <main className="flex-grow">{children}</main>
               <Footer 
                 whatsapp={settings?.whatsapp || ""} 
                 email={settings?.email || ""} 
-                siteName={settings?.siteName || "تسوق الآن"} 
+                siteName={settings?.siteName || "Ali-Boss"} 
               />
               <NotificationPopup />
             </div>

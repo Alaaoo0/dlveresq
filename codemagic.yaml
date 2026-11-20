@@ -1,0 +1,43 @@
+workflows:
+  android-workflow:
+    name: Android Build
+    instance_type: mac_mini_m2
+    max_build_duration: 60
+    environment:
+      groups:
+        - default
+    scripts:
+      - name: Install dependencies
+        script: |
+          cd store
+          npm install
+      
+      - name: Build Next.js
+        script: |
+          cd store
+          npm run build
+      
+      - name: Install Capacitor
+        script: |
+          cd store
+          npm install @capacitor/core @capacitor/cli @capacitor/android
+          npx cap init "تسوق الآن" "com.alaaoo0.mystore" --web-dir=out
+          npx cap add android
+      
+      - name: Sync Capacitor
+        script: |
+          cd store
+          npx cap sync android
+      
+      - name: Build APK
+        script: |
+          cd store/android
+          ./gradlew assembleRelease
+    
+    artifacts:
+      - store/android/app/build/outputs/**/*.apk
+    
+    publishing:
+      email:
+        recipients:
+          - your-email@example.com

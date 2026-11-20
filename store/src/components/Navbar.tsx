@@ -132,8 +132,16 @@ export default function Navbar({ siteName }: { siteName: string }) {
   };
 
   const handleLogout = async () => {
+    // 👇 بنحفظ السلة والمفضلة بمكان مخفي قبل الخروج
+    const currentCart = localStorage.getItem("store_cart");
+    if (currentCart) localStorage.setItem("saved_cart", currentCart);
+    localStorage.removeItem("store_cart");
+
+    const currentWishlist = localStorage.getItem("store_wishlist");
+    if (currentWishlist) localStorage.setItem("saved_wishlist", currentWishlist);
+    localStorage.removeItem("store_wishlist");
+
     await fetch("/api/auth/logout", { method: "POST" });
-    // 👇 شلنا أوامر مسح السلة والمفضلة من هون عشان يضلوا محفوظين
     setUser(null); 
     window.location.href = "/"; 
   };

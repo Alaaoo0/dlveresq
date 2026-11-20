@@ -125,12 +125,10 @@ export default function CheckoutPage() {
         const encodedMsg = encodeURIComponent(msg);
         setWhatsappMessage(encodedMsg);
 
-        // 1. إرسال إشارة للناڤبار عشان يحدث الرصيد فوراً
         window.dispatchEvent(new Event('refreshNavbar'));
 
         if (clearCart) clearCart();
 
-        // 2. محاولة فتح الواتساب تلقائياً بعد ثانية
         setTimeout(() => {
           window.open(`https://wa.me/${storeWhatsapp}?text=${encodedMsg}`, "_blank");
         }, 1000);
@@ -159,7 +157,6 @@ export default function CheckoutPage() {
         <h1 className="text-3xl font-black text-gray-900 mb-4">تم استلام طلبك بنجاح!</h1>
         <p className="text-gray-600 mb-8">تم خصم المبلغ من محفظتك، ورح نتواصل معك قريباً للتأكيد.</p>
         
-        {/* زر الواتساب بيضل موجود كاحتياطي في حال المتصفح منع الفتح التلقائي */}
         <a 
           href={`https://wa.me/${storeWhatsapp}?text=${whatsappMessage}`}
           target="_blank"
@@ -190,15 +187,29 @@ export default function CheckoutPage() {
           <div className="md:col-span-2 bg-white rounded-xl shadow-sm p-6 border border-gray-100">
             <h2 className="text-xl font-bold mb-6 text-gray-900">معلومات التوصيل</h2>
             
-            <div className={`border p-4 rounded-xl mb-6 ${userBalance >= (finalTotal / 100) ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
-              <div className="flex justify-between items-center mb-2">
-                <span className="text-gray-700 font-bold">رصيدك الحالي:</span>
-                <span className="text-2xl font-black text-gray-900">${userBalance.toFixed(2)}</span>
+            {/* 👇 شكل جديد وحلو لصندوق الرصيد والخصم */}
+            <div className="bg-gradient-to-l from-green-50 to-white border border-green-200 p-5 rounded-xl mb-6 shadow-sm">
+              <div className="flex justify-between items-center mb-2 pb-2 border-b border-green-100">
+                <span className="text-gray-700 font-bold flex items-center gap-1"><span>💳</span> رصيدك الحالي:</span>
+                <span className="text-2xl font-black text-green-700">${userBalance.toFixed(2)}</span>
               </div>
+              
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-gray-600 text-sm">المبلغ المطلوب:</span>
+                <span className="font-bold text-red-600">${(finalTotal / 100).toFixed(2)}</span>
+              </div>
+
+              <div className="flex justify-between items-center pt-2 mt-2 border-t border-green-100">
+                <span className="text-gray-800 font-bold">الرصيد المتبقي:</span>
+                <span className={`text-xl font-black ${userBalance - (finalTotal / 100) < 0 ? 'text-red-600' : 'text-gray-900'}`}>
+                  ${(userBalance - (finalTotal / 100)).toFixed(2)}
+                </span>
+              </div>
+              
               {userBalance >= (finalTotal / 100) ? (
-                <p className="text-sm text-green-600 font-bold">رصيدك كافٍ لإتمام الطلب.</p>
+                <p className="text-xs text-green-600 font-bold mt-3 text-center bg-green-100 py-1 rounded">سيتم خصم ${(finalTotal / 100).toFixed(2)} من محفظتك عند تأكيد الطلب.</p>
               ) : (
-                <p className="text-sm text-red-600 font-bold">رصيدك غير كافٍ. المطلوب: ${(finalTotal / 100).toFixed(2)}. <Link href="/wallet" className="underline">اشحن رصيدك هلق</Link></p>
+                <p className="text-xs text-red-600 font-bold mt-3 text-center bg-red-100 py-1 rounded">رصيدك غير كافٍ. <Link href="/wallet" className="underline">اشحن رصيدك هلق</Link></p>
               )}
             </div>
 

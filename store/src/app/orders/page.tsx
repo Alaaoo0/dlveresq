@@ -113,7 +113,8 @@ export default function MyOrdersPage() {
                   </div>
                 ))}
 
-                {!order.customerConfirmed && order.status !== 'pending' && (
+                {/* 👇 هون التعديل: زر التأكيد بيطلع بس إذا الحالة "تم التوصيل" */}
+                {!order.customerConfirmed && order.status === 'delivered' && (
                   <div className="mt-4 pt-4 border-t flex justify-end">
                     {justConfirmed === order.id ? (
                       <span className="text-green-600 font-bold flex items-center gap-2 animate-bounce">

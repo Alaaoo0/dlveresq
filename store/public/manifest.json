@@ -1,11 +1,12 @@
 {
-  "name": "Ali-Boss Store",
-  "short_name": "Ali-Boss",
+  "name": "تسوق الآن",
+  "short_name": "تسوق",
   "description": "أفضل المنتجات بأفضل الأسعار. تسوق الآن.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#dc2626",
+  "orientation": "portrait",
   "icons": [
     {
       "src": "/favicon.ico",

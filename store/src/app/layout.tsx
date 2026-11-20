@@ -6,6 +6,7 @@ import { WishlistProvider } from "../context/WishlistContext";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import NotificationPopup from "../components/NotificationPopup";
+import PWAInstaller from "../components/PWAInstaller";
 import { prisma } from "@/lib/prisma";
 
 export const instant = false;
@@ -13,13 +14,13 @@ export const instant = false;
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Ali-Boss | متجرك الأول",
+  title: "تسوق الآن",
   description: "أفضل المنتجات بأفضل الأسعار",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "Ali-Boss",
+    title: "تسوق الآن",
   },
 };
 
@@ -28,7 +29,7 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
-  userScalable: false, // 👈 عشان نمنع الزووم العشوائي على الموبايل
+  userScalable: false,
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
@@ -37,7 +38,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   if (!settings) {
     settings = { 
       id: 'global', 
-      siteName: 'Ali-Boss', 
+      siteName: 'تسوق الآن', 
       heroTitle: '', 
       heroSubtitle: '', 
       heroBtnText: '', 
@@ -51,16 +52,16 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   return (
     <html lang="ar" dir="rtl" className="overflow-x-hidden">
       <body className={`${inter.className} overflow-x-hidden w-full max-w-[100vw]`}>
+        <PWAInstaller />
         <CartProvider>
           <WishlistProvider>
-            {/* 👈 ضفنا overflow-x-hidden هون كمان */}
             <div className="flex flex-col min-h-screen relative overflow-x-hidden w-full">
-              <Navbar siteName={settings?.siteName || "Ali-Boss"} />
+              <Navbar siteName={settings?.siteName || "تسوق الآن"} />
               <main className="flex-grow w-full overflow-x-hidden">{children}</main>
               <Footer 
                 whatsapp={settings?.whatsapp || ""} 
                 email={settings?.email || ""} 
-                siteName={settings?.siteName || "Ali-Boss"} 
+                siteName={settings?.siteName || "تسوق الآن"} 
               />
               <NotificationPopup />
             </div>

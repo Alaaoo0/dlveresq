@@ -10,8 +10,9 @@ export default function CheckoutPage() {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
-  const [deliveryFee, setDeliveryFee] = useState(2); // مبلغ التوصيل الافتراضي $2
-  const [location, setLocation] = useState(""); // إحداثيات الموقع
+  const [deliveryFee, setDeliveryFee] = useState(200); // من الإعدادات - الزبون ما يعدلو
+  const [location, setLocation] = useState("");
+  const [locationStatus, setLocationStatus] = useState<"idle" | "success" | "denied" | "loading">("idle");
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [orderId, setOrderId] = useState("");
@@ -29,13 +30,33 @@ export default function CheckoutPage() {
 
   const router = useRouter();
 
-  const totalShipping = deliveryFee * 100; // تحويل لم cents
+  const totalShipping = deliveryFee; // بالسنتات
   const finalTotal = cartTotal + totalShipping - (appliedCoupon?.discountAmount || 0);
 
   const showModal = (message: string, type: "error" | "success" = "error") => {
     setModalMessage(message);
     setModalType(type);
     setModalOpen(true);
+  };
+
+  // 📍 تحديد الموقع تلقائياً عند فتح الصفحة
+  const autoDetectLocation = () => {
+    if (!navigator.geolocation) {
+      setLocationStatus("denied");
+      return;
+    }
+    setLocationStatus("loading");
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords;
+        setLocation(`${latitude},${longitude}`);
+        setLocationStatus("success");
+      },
+      () => {
+        setLocationStatus("denied");
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
   };
 
   useEffect(() => {
@@ -56,36 +77,18 @@ export default function CheckoutPage() {
         router.push("/login");
       });
 
-    fetch("/api/settings")
+    // جلب الإعدادات (واتساب + مبلغ التوصيل)
+    fetch("/api/settings", { cache: "no-store" })
       .then((res) => res.json())
       .then((data) => {
         if (data.whatsapp) setStoreWhatsapp(data.whatsapp);
+        if (data.deliveryFee) setDeliveryFee(data.deliveryFee);
       })
       .catch(() => {});
-  }, [router]);
 
-  // 📍 دالة جلب الموقع GPS
-  const handleGetLocation = () => {
-    if (!navigator.geolocation) {
-      showModal("متصفحك لا يدعم تحديد الموقع");
-      return;
-    }
-    showModal("جاري تحديد موقعك...", "success");
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        const { latitude, longitude } = position.coords;
-        const loc = `${latitude},${longitude}`;
-        setLocation(loc);
-        // فتح خرائط جوجل للتأكد
-        const mapsUrl = `https://www.google.com/maps?q=${latitude},${longitude}`;
-        showModal(`✅ تم تحديد موقعك!\n${mapsUrl}`, "success");
-      },
-      (error) => {
-        showModal("❌ فشل تحديد الموقع. تأكد من تفعيل GPS.");
-      },
-      { enableHighAccuracy: true }
-    );
-  };
+    // 📍 تحديد الموقع تلقائياً
+    autoDetectLocation();
+  }, [router]);
 
   const handleApplyCoupon = async () => {
     if (!couponCode) return;
@@ -121,6 +124,9 @@ export default function CheckoutPage() {
 
     setLoading(true);
 
+    const mapsLink = location ? `https://www.google.com/maps?q=${location}` : "";
+    const fullAddress = location ? `${address} | 📍 ${mapsLink}` : address;
+
     try {
       const res = await fetch("/api/orders", {
         method: "POST",
@@ -128,12 +134,13 @@ export default function CheckoutPage() {
         body: JSON.stringify({
           customerName: name,
           phone,
-          address: location ? `${address} | 📍 الموقع: https://www.google.com/maps?q=${location}` : address,
+          address: fullAddress,
+          location: location,
           items: cart,
           total: finalTotal,
           couponId: appliedCoupon?.couponId || null,
           discountAmount: appliedCoupon?.discountAmount || 0,
-          deliveryFee: deliveryFee * 100,
+          deliveryFee: deliveryFee,
         }),
       });
 
@@ -143,9 +150,10 @@ export default function CheckoutPage() {
         setSuccess(true);
         setOrderId(data.orderId);
 
+        // 📱 رسالة واتساب فيها الموقع تلقائياً
         let msg = `🛒 *طلب جديد*\n\n👤 الاسم: ${name}\n📱 الهاتف: ${phone}\n📍 العنوان: ${address}`;
-        if (location) {
-          msg += `\n🗺️ *موقع الزبون:* https://www.google.com/maps?q=${location}`;
+        if (mapsLink) {
+          msg += `\n\n🗺️ *موقع الزبون (GPS):*\n${mapsLink}`;
         }
         msg += `\n\n📦 *المنتجات:*\n`;
         cart.forEach((item: any) => {
@@ -153,7 +161,7 @@ export default function CheckoutPage() {
         });
         if (appliedCoupon)
           msg += `\n🎟️ الخصم (${appliedCoupon.code}): -$${(appliedCoupon.discountAmount / 100).toFixed(2)}`;
-        msg += `\n🚚 *مبلغ التوصيل:* $${deliveryFee.toFixed(2)}`;
+        msg += `\n🚚 *مبلغ التوصيل:* $${(deliveryFee / 100).toFixed(2)}`;
         msg += `\n💰 *المجموع النهائي:* $${(finalTotal / 100).toFixed(2)}\n💳 *تم الدفع من المحفظة*`;
 
         const encodedMsg = encodeURIComponent(msg);
@@ -161,9 +169,10 @@ export default function CheckoutPage() {
         window.dispatchEvent(new Event("refreshNavbar"));
         if (clearCart) clearCart();
 
+        // فتح واتساب تلقائياً
         setTimeout(() => {
           window.open(`https://wa.me/${storeWhatsapp}?text=${encodedMsg}`, "_blank");
-        }, 1000);
+        }, 800);
       } else {
         showModal(data.message || "فشل الطلب، حاول مرة تانية.");
       }
@@ -186,7 +195,7 @@ export default function CheckoutPage() {
       <div className="max-w-xl mx-auto p-8 mt-20 text-center bg-white rounded-2xl shadow-lg border border-green-100" dir="rtl">
         <div className="text-6xl mb-4">🎉</div>
         <h1 className="text-3xl font-black text-gray-900 mb-2">تم استلام طلبك بنجاح!</h1>
-        <p className="text-gray-600 mb-4">تم خصم المبلغ من محفظتك.</p>
+        <p className="text-gray-600 mb-4">تم خصم المبلغ من محفظتك، ورح نوصلك قريباً.</p>
 
         <p className="text-gray-700 font-bold mb-2">رقم طلبك:</p>
         <div className="bg-gray-50 border-2 border-dashed border-red-200 rounded-xl p-4 mb-6">
@@ -203,7 +212,7 @@ export default function CheckoutPage() {
 
         <div className="space-y-3">
           <a href={`https://wa.me/${storeWhatsapp}?text=${whatsappMessage}`} target="_blank" className="w-full bg-green-600 text-white font-bold text-lg py-4 rounded-xl hover:bg-green-700 transition-colors flex items-center justify-center gap-2 shadow-lg">
-            <span>📱</span> إرسال تفاصيل الطلب عبر واتساب
+            <span>📱</span> إرسال الطلب عبر واتساب
           </a>
           <Link href={`/track?id=${orderId}`} className="w-full bg-blue-600 text-white font-bold text-lg py-4 rounded-xl hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 shadow-lg">
             <span>🛵</span> تتبع حالة طلبك الآن
@@ -286,38 +295,37 @@ export default function CheckoutPage() {
 
               <div>
                 <label className="block text-sm font-bold text-gray-700 mb-2">العنوان بالتفصيل</label>
-                <textarea value={address} onChange={(e) => setAddress(e.target.value)} rows={3} className="w-full border border-gray-300 rounded-lg p-3 text-black focus:ring-2 focus:ring-red-500 outline-none" placeholder="المدينة، الشارع..." required></textarea>
+                <textarea value={address} onChange={(e) => setAddress(e.target.value)} rows={3} className="w-full border border-gray-300 rounded-lg p-3 text-black focus:ring-2 focus:ring-red-500 outline-none" placeholder="المدينة، الشارع، علامة مميزة..." required></textarea>
               </div>
 
-              {/* 📍 زر تحديد الموقع */}
+              {/* 📍 حالة الموقع - تلقائي بدون ما الزبون يعمل شي */}
               <div className="bg-blue-50 border border-blue-200 p-4 rounded-xl">
-                <label className="block text-sm font-bold text-gray-700 mb-2">📍 موقعك على الخريطة</label>
-                <div className="flex gap-2">
-                  <button type="button" onClick={handleGetLocation} className="flex-1 bg-blue-600 text-white px-4 py-3 rounded-lg font-bold hover:bg-blue-700 transition flex items-center justify-center gap-2">
-                    <span>📍</span> {location ? "تحديث الموقع" : "تحديد موقعي الحالي"}
-                  </button>
-                </div>
-                {location && (
-                  <p className="text-xs text-blue-700 mt-2 font-mono" dir="ltr">
-                    ✅ تم تحديد الموقع: {location}
-                  </p>
+                <label className="block text-sm font-bold text-gray-700 mb-2">📍 موقعك (تلقائي)</label>
+                {locationStatus === "loading" && (
+                  <p className="text-blue-700 font-bold">⏳ جاري تحديد موقعك...</p>
                 )}
-                <p className="text-xs text-gray-500 mt-2">سيتم إرسال موقعك للأدمن عبر واتساب ليعرف وين يوصلك</p>
-              </div>
-
-              {/* 💰 مبلغ التوصيل */}
-              <div className="bg-yellow-50 border border-yellow-200 p-4 rounded-xl">
-                <label className="block text-sm font-bold text-gray-700 mb-2">🚚 مبلغ التوصيل ($)</label>
-                <input
-                  type="number"
-                  step="0.5"
-                  min="0"
-                  value={deliveryFee}
-                  onChange={(e) => setDeliveryFee(parseFloat(e.target.value) || 0)}
-                  className="w-full border border-gray-300 rounded-lg p-3 text-black text-lg font-bold focus:ring-2 focus:ring-yellow-500 outline-none"
-                  dir="ltr"
-                />
-                <p className="text-xs text-gray-500 mt-2">حدد مبلغ التوصيل حسب موقعك (مثلاً: 2$ للمناطق القريبة، 5$ للبعيدة)</p>
+                {locationStatus === "success" && (
+                  <div>
+                    <p className="text-green-700 font-bold">✅ تم تحديد موقعك تلقائياً!</p>
+                    <p className="text-xs text-gray-600 mt-1 break-all" dir="ltr">
+                      🗺️ https://www.google.com/maps?q={location}
+                    </p>
+                    <button type="button" onClick={autoDetectLocation} className="text-xs text-blue-600 underline mt-2">
+                      إعادة تحديد الموقع
+                    </button>
+                  </div>
+                )}
+                {locationStatus === "denied" && (
+                  <div>
+                    <p className="text-red-700 font-bold">⚠️ ما سمحت بالوصول للموقع</p>
+                    <button type="button" onClick={autoDetectLocation} className="mt-2 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-blue-700">
+                      📍 السماح وتحديد الموقع
+                    </button>
+                  </div>
+                )}
+                <p className="text-xs text-gray-500 mt-2">
+                  الموقع يُرسل تلقائياً مع طلبك على واتساب لنعرف وين نوصلك.
+                </p>
               </div>
 
               <button type="submit" disabled={loading || userBalance < finalTotal / 100} className="w-full bg-red-600 text-white font-bold text-lg py-4 rounded-xl mt-4 hover:bg-red-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed">
@@ -355,7 +363,7 @@ export default function CheckoutPage() {
                 {appliedCoupon && <div className="flex justify-between text-green-600 font-bold"><span>الخصم</span><span>-${(appliedCoupon.discountAmount / 100).toFixed(2)}</span></div>}
                 <div className="flex justify-between text-gray-800 font-semibold">
                   <span>🚚 التوصيل</span>
-                  <span>${deliveryFee.toFixed(2)}</span>
+                  <span>${(deliveryFee / 100).toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between font-black text-xl text-red-600 mt-4 pt-4 border-t"><span>الإجمالي:</span><span>${(finalTotal / 100).toFixed(2)}</span></div>
               </div>

@@ -43,7 +43,19 @@ export default async function AdminOrdersPage() {
             <div key={order.id} className="bg-white rounded-xl shadow-sm border p-5">
               <div className="flex flex-wrap justify-between items-start gap-4 mb-4">
                 <div>
-                  <p className="font-mono text-sm text-gray-500" dir="ltr">#{order.id.slice(0, 12)}</p>
+                  {/* رقم الطلب الكامل مع زر نسخ */}
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="bg-red-100 text-red-700 px-3 py-1 rounded-lg font-mono font-bold text-sm" dir="ltr">
+                      #{order.id}
+                    </span>
+                    <button
+                      onClick={() => { navigator.clipboard.writeText(order.id); alert('تم نسخ رقم الطلب!'); }}
+                      className="text-gray-500 hover:text-red-600 text-xs"
+                      title="نسخ الرقم"
+                    >
+                      📋
+                    </button>
+                  </div>
                   <h3 className="text-lg font-bold text-gray-900">{order.customerName}</h3>
                   <p className="text-gray-600 text-sm" dir="ltr">📞 {order.phone}</p>
                   <p className="text-gray-600 text-sm">📍 {order.address}</p>

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useCart } from "../app/context/CartContext";
-import { useWishlist } from "../app/context/WishlistContext";
+import { useWishlist } from "../../context/WishlistContext";
 import { useState, useEffect } from "react";
 
 export default function Navbar({ siteName = "توصيل سريع" }: { siteName?: string }) {
@@ -30,12 +30,10 @@ export default function Navbar({ siteName = "توصيل سريع" }: { siteName?
   return (
     <header className="bg-white shadow-sm sticky top-0 z-30 border-b border-gray-100">
       <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
-        {/* اللوجو */}
         <Link href="/" className="text-2xl font-black text-red-600">
           {siteName}
         </Link>
 
-        {/* قائمة سطح المكتب */}
         <nav className="hidden md:flex items-center gap-6">
           <Link href="/" className="text-gray-700 hover:text-red-600 font-bold flex items-center gap-1">
             🏠 الرئيسية
@@ -51,7 +49,6 @@ export default function Navbar({ siteName = "توصيل سريع" }: { siteName?
           </Link>
         </nav>
 
-        {/* أيقونات المستخدم */}
         <div className="flex items-center gap-3">
           {user ? (
             <>
@@ -94,14 +91,12 @@ export default function Navbar({ siteName = "توصيل سريع" }: { siteName?
             ⚙️
           </Link>
 
-          {/* زر القائمة للموبايل */}
           <button onClick={() => setMenuOpen(!menuOpen)} className="md:hidden text-2xl text-gray-700">
             ☰
           </button>
         </div>
       </div>
 
-      {/* قائمة الموبايل */}
       {menuOpen && (
         <div className="md:hidden bg-white border-t p-4 space-y-3">
           <Link href="/" onClick={() => setMenuOpen(false)} className="block text-gray-700 hover:text-red-600 font-bold">🏠 الرئيسية</Link>

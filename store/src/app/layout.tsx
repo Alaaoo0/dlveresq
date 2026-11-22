@@ -9,7 +9,6 @@ import NotificationPopup from "../components/NotificationPopup";
 import SplashScreen from "../components/SplashScreen";
 import { prisma } from "@/lib/prisma";
 
-// ✅ البديل الصحيح والمسموح في Next.js لمنع الكاش وجلب البيانات المحدثة
 export const dynamic = "force-dynamic";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -45,7 +44,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       discountBadge: '', 
       whatsapp: '96170000000', 
       whishNumber: '0000000',
-      email: 'info@aliboss.com' 
+      email: 'info@aliboss.com',
+      deliveryLocation: 'بيروت، لبنان'
     };
   }
 

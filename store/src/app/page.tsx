@@ -18,8 +18,17 @@ export default async function HomePage() {
     });
   } catch (error) {
     console.error("خطأ في الاتصال بقاعدة البيانات:", error);
-    settings = { heroTitle: "جوعان؟ طلبك يوصلك!", heroSubtitle: "مطاعم، سوبرماركت، وصيدليات توصلك لباب البيت", discountBadge: "توصيل مجاني" };
-    categories = [{ id: '1', name: '🍔 مطاعم' }, { id: '2', name: '🛒 سوبرماركت' }, { id: '3', name: '💊 صيدليات' }];
+    settings = {
+      heroTitle: "جوعان؟ طلبك يوصلك!",
+      heroSubtitle: "مطاعم، سوبرماركت، وصيدليات توصلك لباب البيت",
+      discountBadge: "توصيل مجاني",
+      deliveryLocation: "بيروت، لبنان",
+    };
+    categories = [
+      { id: '1', name: '🍔 مطاعم' },
+      { id: '2', name: '🛒 سوبرماركت' },
+      { id: '3', name: '💊 صيدليات' },
+    ];
   }
 
   return (
@@ -29,7 +38,7 @@ export default async function HomePage() {
         <div className="max-w-5xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-2 text-sm font-bold text-gray-700">
             <span className="text-red-600 text-lg">📍</span>
-            <span>التوصيل إلى: <span className="text-red-600">بيروت، لبنان</span></span>
+            <span>التوصيل إلى: <span className="text-red-600">{settings?.deliveryLocation || 'بيروت، لبنان'}</span></span>
           </div>
           <Link href="/track" className="text-xs font-bold text-blue-600 bg-blue-50 px-3 py-1.5 rounded-full hover:bg-blue-100 transition">
             🛵 تتبع طلبك

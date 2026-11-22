@@ -46,6 +46,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       whishNumber: '0000000',
       email: 'info@aliboss.com',
       deliveryLocation: 'بيروت، لبنان',
+      deliveryFee: 200,
     };
   }
 

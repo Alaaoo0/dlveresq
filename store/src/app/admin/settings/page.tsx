@@ -16,6 +16,7 @@ export default function SettingsPage() {
     whishNumber: "",
     email: "",
     deliveryLocation: "بيروت، لبنان",
+    deliveryFee: 200,
   });
 
   const [loading, setLoading] = useState(true);
@@ -36,6 +37,7 @@ export default function SettingsPage() {
           whishNumber: data.whishNumber || "",
           email: data.email || "",
           deliveryLocation: data.deliveryLocation || "بيروت، لبنان",
+          deliveryFee: data.deliveryFee || 200,
         });
         setLoading(false);
       })
@@ -76,7 +78,6 @@ export default function SettingsPage() {
 
   return (
     <div className="max-w-2xl mx-auto p-6 mt-10 bg-white rounded-lg shadow-md border" dir="rtl">
-
       <div className="mb-4">
         <Link href="/admin" className="text-gray-600 hover:text-black font-bold flex items-center gap-2">
           <span>←</span> رجوع للوحة التحكم
@@ -120,17 +121,35 @@ export default function SettingsPage() {
         </div>
 
         <div className="border p-4 rounded bg-blue-50 space-y-4">
-          <h2 className="font-bold text-gray-800">📍 موقع التوصيل</h2>
-          <label className="block text-sm font-bold text-gray-700 mb-1">العنوان الذي يظهر في شريط التوصيل</label>
-          <input
-            type="text"
-            value={formData.deliveryLocation}
-            onChange={(e) => setFormData({ ...formData, deliveryLocation: e.target.value })}
-            className="w-full border p-3 rounded text-black"
-            placeholder="مثال: بيروت، لبنان"
-            required
-          />
-          <p className="text-xs text-gray-500">سيظهر في أعلى الصفحة الرئيسية بجانب أيقونة الموقع 📍</p>
+          <h2 className="font-bold text-gray-800">📍 موقع التوصيل ومبلغه</h2>
+          <div>
+            <label className="block text-sm font-bold text-gray-700 mb-1">العنوان الذي يظهر في شريط التوصيل</label>
+            <input
+              type="text"
+              value={formData.deliveryLocation}
+              onChange={(e) => setFormData({ ...formData, deliveryLocation: e.target.value })}
+              className="w-full border p-3 rounded text-black"
+              placeholder="مثال: بيروت، لبنان"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-bold text-gray-700 mb-1">💰 مبلغ التوصيل (بالسنتات - مثال: 200 = $2.00)</label>
+            <input
+              type="number"
+              value={formData.deliveryFee}
+              onChange={(e) => setFormData({ ...formData, deliveryFee: parseInt(e.target.value) || 0 })}
+              className="w-full border p-3 rounded text-black text-lg font-bold"
+              min="0"
+              step="50"
+              dir="ltr"
+              required
+            />
+            <p className="text-xs text-gray-500 mt-2">
+              المبلغ الحالي: <span className="font-bold text-red-600">${(formData.deliveryFee / 100).toFixed(2)}</span>
+              — سيُضاف تلقائياً على كل طلب، والزبون ما بيحددو.
+            </p>
+          </div>
         </div>
 
         <div className="flex gap-3 pt-4">

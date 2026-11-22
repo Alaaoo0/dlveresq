@@ -34,6 +34,8 @@ model Order {
   couponId          String?
   coupon            Coupon?     @relation(fields: [couponId], references: [id])
   discountAmount    Int         @default(0)
+  deliveryFee       Int         @default(200)
+  location          String?
   createdAt         DateTime    @default(now())
   userId            String?
   user              User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
@@ -77,6 +79,7 @@ model Settings {
   whishNumber      String @default("0000000")
   email            String @default("info@aliboss.com")
   deliveryLocation String @default("بيروت، لبنان")
+  deliveryFee      Int    @default(200)
 }
 
 model PushSubscription {
@@ -132,6 +135,7 @@ model Category {
   name      String   @unique
   createdAt DateTime @default(now())
 }
+
 model Employee {
   id          String   @id @default(cuid())
   name        String

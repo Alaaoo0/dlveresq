@@ -33,7 +33,6 @@ export default async function HomePage() {
 
   return (
     <main className="min-h-screen bg-gray-50" dir="rtl">
-      {/* 1. شريط العنوان/الموقع */}
       <div className="bg-white border-b px-4 py-3 sticky top-0 z-20 shadow-sm">
         <div className="max-w-5xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-2 text-sm font-bold text-gray-700">
@@ -46,7 +45,6 @@ export default async function HomePage() {
         </div>
       </div>
 
-      {/* 2. Hero Section */}
       <div className="bg-gradient-to-br from-red-600 to-red-700 text-white pb-20 pt-10 px-4 rounded-b-[2.5rem] shadow-lg">
         <div className="max-w-4xl mx-auto text-center">
           <h1 className="text-3xl md:text-4xl font-black mb-3">{settings?.heroTitle || "جوعان؟ طلبك يوصلك!"}</h1>
@@ -60,14 +58,12 @@ export default async function HomePage() {
       </div>
 
       <div className="max-w-5xl mx-auto px-4 -mt-12">
-        {/* 3. شريط مزايا */}
         <div className="bg-white rounded-2xl shadow-md p-4 mb-8 grid grid-cols-3 gap-2 text-center">
           <div className="flex flex-col items-center gap-1"><span className="text-2xl">🚀</span><span className="text-xs font-bold text-gray-700">توصيل سريع</span></div>
           <div className="flex flex-col items-center gap-1"><span className="text-2xl">💵</span><span className="text-xs font-bold text-gray-700">دفع عند الاستلام</span></div>
           <div className="flex flex-col items-center gap-1"><span className="text-2xl">🎁</span><span className="text-xs font-bold text-gray-700">عروض يومية</span></div>
         </div>
 
-        {/* 4. الأقسام */}
         <div className="bg-white rounded-2xl shadow-sm p-4 mb-8 border border-gray-100">
           <h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2"><span>📂</span> الأقسام</h2>
           <div className="flex gap-4 overflow-x-auto pb-2">
@@ -80,7 +76,6 @@ export default async function HomePage() {
           </div>
         </div>
 
-        {/* 5. الأكثر طلباً */}
         <div className="mb-12">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2"><span>🔥</span> الأكثر طلباً</h2>

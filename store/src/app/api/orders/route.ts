@@ -10,6 +10,25 @@ export async function POST(req: Request) {
       return NextResponse.json({ message: 'البيانات ناقصة' }, { status: 400 });
     }
 
+    // 1. التحقق من أن المستخدم مسجل دخول
+    const cookieStore = await cookies();
+    const userId = cookieStore.get('user_session')?.value;
+
+    if (!userId) {
+      return NextResponse.json({ message: 'يجب تسجيل الدخول أولاً لإتمام الطلب' }, { status: 401 });
+    }
+
+    // 2. التحقق من رصيد المستخدم في الخلفية (أمان إضافي)
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    const totalInDollars = total / 100;
+
+    if (!user || user.walletBalance < totalInDollars) {
+      return NextResponse.json({ 
+        message: `عذراً، رصيد محفظتك غير كافٍ. المطلوب: $${totalInDollars.toFixed(2)}، المتوفر: $${(user?.walletBalance || 0).toFixed(2)}` 
+      }, { status: 400 });
+    }
+
+    // 3. التحقق من مخزون المنتجات
     const productIds = items.map((i: any) => i.id);
     const dbProducts = await prisma.product.findMany({ where: { id: { in: productIds } } });
 
@@ -20,25 +39,19 @@ export async function POST(req: Request) {
       }
     }
 
-    const cookieStore = await cookies();
-    const userId = cookieStore.get('user_session')?.value;
-    const totalInDollars = total / 100;
-
-    if (userId) {
-      const user = await prisma.user.findUnique({ where: { id: userId } });
-      if (!user || user.walletBalance < totalInDollars) {
-        return NextResponse.json({ message: 'عذراً، رصيد محفظتك غير كافٍ لإتمام هذا الطلب.' }, { status: 400 });
-      }
-    }
-
+    // 4. تنفيذ العملية في معاملة آمنة (Transaction)
     const order = await prisma.$transaction(async (tx) => {
+      // أ) إنشاء الطلب
       const newOrder = await tx.order.create({
         data: {
-          customerName, phone, address,
+          customerName,
+          phone,
+          address,
           total: Math.round(total),
           couponId: couponId || null,
           discountAmount: discountAmount || 0,
-          userId: userId || null,
+          userId: userId,
+          status: 'pending',
           items: {
             create: items.map((item: any) => ({
               productId: item.id,
@@ -50,6 +63,7 @@ export async function POST(req: Request) {
         },
       });
 
+      // ب) خصم المخزون
       for (const item of items) {
         await tx.product.update({
           where: { id: item.id },
@@ -57,22 +71,44 @@ export async function POST(req: Request) {
         });
       }
 
-      if (couponId) {
-        await tx.coupon.update({ where: { id: couponId }, data: { usedCount: { increment: 1 } } });
-      }
+      // ج) خصم الرصيد من المحفظة
+      await tx.user.update({
+        where: { id: userId },
+        data: { walletBalance: { decrement: totalInDollars } },
+      });
 
-      if (userId) {
-        await tx.user.update({ where: { id: userId }, data: { walletBalance: { decrement: totalInDollars } } });
-        await tx.walletTransaction.create({
-          data: { userId, amount: totalInDollars, type: 'WITHDRAW', status: 'APPROVED' }
+      // د) تسجيل حركة في المحفظة
+      await tx.walletTransaction.create({
+        data: {
+          userId,
+          amount: totalInDollars,
+          type: 'ORDER_PAYMENT',
+          status: 'COMPLETED',
+        },
+      });
+
+      // هـ) تحديث الكوبون إن وجد
+      if (couponId) {
+        await tx.coupon.update({
+          where: { id: couponId },
+          data: { usedCount: { increment: 1 } },
         });
       }
 
       return newOrder;
     });
 
-    return NextResponse.json({ message: 'تم استلام الطلب', orderId: order.id }, { status: 201 });
+    return NextResponse.json({ 
+      message: 'تم استلام الطلب بنجاح', 
+      orderId: order.id 
+    }, { status: 201 });
+
   } catch (error: any) {
-    return NextResponse.json({ message: 'فشل في السيرفر', error: error.message }, { status: 500 });
+    // طباعة الخطأ الحقيقي في سجلات Vercel لنتمكن من معرفته
+    console.error("❌ خطأ أثناء إنشاء الطلب:", error);
+    return NextResponse.json({ 
+      message: 'فشل في إنشاء الطلب', 
+      error: error.message || 'خطأ غير معروف' 
+    }, { status: 500 });
   }
 }

@@ -7,7 +7,9 @@ import ReviewSection from "../../components/ReviewSection";
 import BackButton from "../../components/BackButton";
 import { prisma } from "@/lib/prisma";
 
-export const instant = false;
+// البديل الصحيح لمنع الكاش وجلب البيانات المحدثة دائماً
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 async function ProductDetails({ searchParams }: { searchParams: Promise<{ slug?: string }> }) {
   const { slug } = await searchParams;

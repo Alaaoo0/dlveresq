@@ -16,6 +16,7 @@ export async function GET() {
         whishNumber: '0000000',
         email: 'support@delivery.com',
         deliveryLocation: 'بيروت، لبنان',
+        deliveryFee: 200,
       });
     }
     return NextResponse.json(settings);
@@ -39,6 +40,7 @@ export async function POST(req: Request) {
         whishNumber: data.whishNumber,
         email: data.email,
         deliveryLocation: data.deliveryLocation || 'بيروت، لبنان',
+        deliveryFee: parseInt(data.deliveryFee) || 200,
       },
       create: {
         id: 'global',
@@ -51,6 +53,7 @@ export async function POST(req: Request) {
         whishNumber: data.whishNumber,
         email: data.email,
         deliveryLocation: data.deliveryLocation || 'بيروت، لبنان',
+        deliveryFee: parseInt(data.deliveryFee) || 200,
       },
     });
     return NextResponse.json(settings);

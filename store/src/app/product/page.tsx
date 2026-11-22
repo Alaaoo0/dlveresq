@@ -7,7 +7,6 @@ import ReviewSection from "../../components/ReviewSection";
 import BackButton from "../../components/BackButton";
 import { prisma } from "@/lib/prisma";
 
-// البديل الصحيح لمنع الكاش وجلب البيانات المحدثة دائماً
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
@@ -64,7 +63,7 @@ async function ProductDetails({ searchParams }: { searchParams: Promise<{ slug?:
 
             <div className="bg-gray-50 p-4 rounded-xl mb-6">
               <p className="text-4xl font-black text-red-600">${(product.price / 100).toFixed(2)}</p>
-              <p className="text-sm text-green-600 font-bold mt-2">شحن مجاني</p>
+              <p className="text-sm text-blue-600 font-bold mt-2">🚚 التوصيل يُحدد عند إتمام الطلب</p>
             </div>
 
             <div className="space-y-3 mb-6">

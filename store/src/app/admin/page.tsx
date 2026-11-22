@@ -78,6 +78,9 @@ export default function AdminPage() {
           <Link href="/admin/orders" className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700">
             📦 الطلبات
           </Link>
+          <Link href="/admin/employees" className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700">
+            👥 الموظفين
+          </Link>
           <Link href="/admin/coupons" className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
             🎟️ الكوبونات
           </Link>
@@ -87,7 +90,6 @@ export default function AdminPage() {
           <Link href="/admin/wallet" className="bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700">
             💳 المحفظة
           </Link>
-          {/* 👈 ضفنا زر الإشعارات هون */}
           <Link href="/admin/notifications" className="bg-yellow-500 text-white px-4 py-2 rounded-lg hover:bg-yellow-600">
             🔔 الإشعارات
           </Link>

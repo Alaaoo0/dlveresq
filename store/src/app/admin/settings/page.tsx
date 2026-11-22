@@ -2,135 +2,140 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link"; // ضفنا هاد السطر عشان زر الرجوع
+import Link from "next/link";
 
 export default function SettingsPage() {
   const router = useRouter();
-    const [formData, setFormData] = useState({
-        siteName: "", 
-            heroTitle: "", 
-                heroSubtitle: "", 
-                    heroBtnText: "", 
-                        discountBadge: "", 
-                            whatsapp: "", 
-                                whishNumber: "", // 👈 ضفنا حقل الويش هون
-                                    email: ""
-                                      });
-                                        
-                                          const [loading, setLoading] = useState(true);
-                                            const [saving, setSaving] = useState(false);
-                                              const [resetting, setResetting] = useState(false);
+  const [formData, setFormData] = useState({
+    siteName: "",
+    heroTitle: "",
+    heroSubtitle: "",
+    heroBtnText: "",
+    discountBadge: "",
+    whatsapp: "",
+    whishNumber: "",
+    email: "",
+    deliveryLocation: "بيروت، لبنان",
+  });
 
-                                                useEffect(() => {
-                                                    fetch("/api/settings")
-                                                          .then((res) => res.json())
-                                                                .then((data) => {
-                                                                        setFormData(data);
-                                                                                setLoading(false);
-                                                                                      });
-                                                                                        }, []);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [resetting, setResetting] = useState(false);
 
-                                                                                          const handleSubmit = async (e: React.FormEvent) => {
-                                                                                              e.preventDefault();
-                                                                                                  setSaving(true);
-                                                                                                      await fetch("/api/settings", {
-                                                                                                            method: "POST",
-                                                                                                                  headers: { "Content-Type": "application/json" },
-                                                                                                                        body: JSON.stringify(formData),
-                                                                                                                            });
-                                                                                                                                setSaving(false);
-                                                                                                                                    alert("تم حفظ الإعدادات بنجاح!");
-                                                                                                                                        router.push("/admin");
-                                                                                                                                          };
+  useEffect(() => {
+    fetch("/api/settings")
+      .then((res) => res.json())
+      .then((data) => {
+        setFormData(data);
+        setLoading(false);
+      });
+  }, []);
 
-                                                                                                                                            const handleResetStats = async () => {
-                                                                                                                                                if (!confirm("هل أنت متأكد من مسح جميع الطلبات والإحصائيات؟ لا يمكن التراجع عن هذا الإجراء!")) return;
-                                                                                                                                                    
-                                                                                                                                                        setResetting(true);
-                                                                                                                                                            try {
-                                                                                                                                                                  const res = await fetch("/api/admin/stats/reset", { method: "POST" });
-                                                                                                                                                                        if (res.ok) {
-                                                                                                                                                                                alert("تم مسح جميع الطلبات وتصفير الإحصائيات بنجاح!");
-                                                                                                                                                                                        router.push("/admin");
-                                                                                                                                                                                              } else {
-                                                                                                                                                                                                      alert("حدث خطأ أثناء المسح.");
-                                                                                                                                                                                                            }
-                                                                                                                                                                                                                } catch (e) {
-                                                                                                                                                                                                                      alert("خطأ في الاتصال.");
-                                                                                                                                                                                                                          }
-                                                                                                                                                                                                                              setResetting(false);
-                                                                                                                                                                                                                                };
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSaving(true);
+    await fetch("/api/settings", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(formData),
+    });
+    setSaving(false);
+    alert("تم حفظ الإعدادات بنجاح!");
+    router.push("/admin");
+  };
 
-                                                                                                                                                                                                                                  if (loading) return <p className="text-center mt-20 text-black">جاري التحميل...</p>;
+  const handleResetStats = async () => {
+    if (!confirm("هل أنت متأكد من مسح جميع الطلبات والإحصائيات؟ لا يمكن التراجع عن هذا الإجراء!")) return;
 
-                                                                                                                                                                                                                                    return (
-                                                                                                                                                                                                                                        <div className="max-w-2xl mx-auto p-6 mt-10 bg-white rounded-lg shadow-md border" dir="rtl">
-                                                                                                                                                                                                                                              
-                                                                                                                                                                                                                                                    {/* زر الرجوع اللي طلبته */}
-                                                                                                                                                                                                                                                          <div className="mb-4">
-                                                                                                                                                                                                                                                                  <Link href="/admin" className="text-gray-600 hover:text-black font-bold flex items-center gap-2">
-                                                                                                                                                                                                                                                                            <span>←</span> رجوع للوحة التحكم
-                                                                                                                                                                                                                                                                                    </Link>
-                                                                                                                                                                                                                                                                                          </div>
+    setResetting(true);
+    try {
+      const res = await fetch("/api/admin/stats/reset", { method: "POST" });
+      if (res.ok) {
+        alert("تم مسح جميع الطلبات وتصفير الإحصائيات بنجاح!");
+        router.push("/admin");
+      } else {
+        alert("حدث خطأ أثناء المسح.");
+      }
+    } catch (e) {
+      alert("خطأ في الاتصال.");
+    }
+    setResetting(false);
+  };
 
-                                                                                                                                                                                                                                                                                                <h1 className="text-2xl font-bold mb-6 text-gray-900">إعدادات المتجر العامة</h1>
-                                                                                                                                                                                                                                                                                                      
-                                                                                                                                                                                                                                                                                                            <form onSubmit={handleSubmit} className="space-y-5">
-                                                                                                                                                                                                                                                                                                                    <div>
-                                                                                                                                                                                                                                                                                                                              <label className="block text-sm font-bold text-gray-700 mb-2">اسم المتجر (اللوجو)</label>
-                                                                                                                                                                                                                                                                                                                                        <input type="text" value={formData.siteName} onChange={(e) => setFormData({...formData, siteName: e.target.value})} className="w-full border p-3 rounded text-black" required />
-                                                                                                                                                                                                                                                                                                                                                </div>
+  if (loading) return <p className="text-center mt-20 text-black">جاري التحميل...</p>;
 
-                                                                                                                                                                                                                                                                                                                                                        <div className="border p-4 rounded bg-gray-50 space-y-4">
-                                                                                                                                                                                                                                                                                                                                                                  <h2 className="font-bold text-gray-800">البانر الإعلاني (الرئيسية)</h2>
-                                                                                                                                                                                                                                                                                                                                                                            <input type="text" value={formData.heroTitle} onChange={(e) => setFormData({...formData, heroTitle: e.target.value})} className="w-full border p-3 rounded text-black" placeholder="العنوان الرئيسي" required />
-                                                                                                                                                                                                                                                                                                                                                                                      <input type="text" value={formData.heroSubtitle} onChange={(e) => setFormData({...formData, heroSubtitle: e.target.value})} className="w-full border p-3 rounded text-black" placeholder="العنوان الفرعي" required />
-                                                                                                                                                                                                                                                                                                                                                                                                <input type="text" value={formData.heroBtnText} onChange={(e) => setFormData({...formData, heroBtnText: e.target.value})} className="w-full border p-3 rounded text-black" placeholder="نص الزر" required />
-                                                                                                                                                                                                                                                                                                                                                                                                        </div>
+  return (
+    <div className="max-w-2xl mx-auto p-6 mt-10 bg-white rounded-lg shadow-md border" dir="rtl">
 
-                                                                                                                                                                                                                                                                                                                                                                                                                <div>
-                                                                                                                                                                                                                                                                                                                                                                                                                          <label className="block text-sm font-bold text-gray-700 mb-2">شعار الخصم (على المنتجات)</label>
-                                                                                                                                                                                                                                                                                                                                                                                                                                    <input type="text" value={formData.discountBadge} onChange={(e) => setFormData({...formData, discountBadge: e.target.value})} className="w-full border p-3 rounded text-black" placeholder="مثال: خصم 20%" required />
-                                                                                                                                                                                                                                                                                                                                                                                                                                            </div>
+      <div className="mb-4">
+        <Link href="/admin" className="text-gray-600 hover:text-black font-bold flex items-center gap-2">
+          <span>←</span> رجوع للوحة التحكم
+        </Link>
+      </div>
 
-                                                                                                                                                                                                                                                                                                                                                                                                                                                    <div className="border p-4 rounded bg-gray-50 space-y-4">
-                                                                                                                                                                                                                                                                                                                                                                                                                                                              <h2 className="font-bold text-gray-800">معلومات التواصل والدفع</h2>
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                        
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  <div>
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              <label className="block text-sm font-bold text-gray-700 mb-1">رقم الواتساب</label>
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          <input type="text" value={formData.whatsapp} onChange={(e) => setFormData({...formData, whatsapp: e.target.value})} className="w-full border p-3 rounded text-black" placeholder="96170000000" dir="ltr" required />
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    </div>
+      <h1 className="text-2xl font-bold mb-6 text-gray-900">إعدادات المتجر العامة</h1>
 
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              {/* 👈 هون ضفنا حقل الويش موني */}
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        <div>
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    <label className="block text-sm font-bold text-gray-700 mb-1">رقم الويش موني (Whish Money)</label>
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                <input type="text" value={formData.whishNumber} onChange={(e) => setFormData({...formData, whishNumber: e.target.value})} className="w-full border p-3 rounded text-black" placeholder="مثال: 7890963" dir="ltr" />
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          </div>
+      <form onSubmit={handleSubmit} className="space-y-5">
+        <div>
+          <label className="block text-sm font-bold text-gray-700 mb-2">اسم المتجر (اللوجو)</label>
+          <input type="text" value={formData.siteName} onChange={(e) => setFormData({ ...formData, siteName: e.target.value })} className="w-full border p-3 rounded text-black" required />
+        </div>
 
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    <div>
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                <label className="block text-sm font-bold text-gray-700 mb-1">الإيميل</label>
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            <input type="email" value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} className="w-full border p-3 rounded text-black" placeholder="info@aliboss.com" dir="ltr" required />
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      </div>
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              </div>
+        <div className="border p-4 rounded bg-gray-50 space-y-4">
+          <h2 className="font-bold text-gray-800">البانر الإعلاني (الرئيسية)</h2>
+          <input type="text" value={formData.heroTitle} onChange={(e) => setFormData({ ...formData, heroTitle: e.target.value })} className="w-full border p-3 rounded text-black" placeholder="العنوان الرئيسي" required />
+          <input type="text" value={formData.heroSubtitle} onChange={(e) => setFormData({ ...formData, heroSubtitle: e.target.value })} className="w-full border p-3 rounded text-black" placeholder="العنوان الفرعي" required />
+          <input type="text" value={formData.heroBtnText} onChange={(e) => setFormData({ ...formData, heroBtnText: e.target.value })} className="w-full border p-3 rounded text-black" placeholder="نص الزر" required />
+        </div>
 
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      <button type="submit" disabled={saving || resetting} className="w-full bg-green-600 text-white p-3 rounded font-bold hover:bg-green-700 disabled:bg-gray-400">
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                {saving ? "جاري الحفظ..." : "حفظ كل الإعدادات"}
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        </button>
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              </form>
+        <div>
+          <label className="block text-sm font-bold text-gray-700 mb-2">شعار الخصم (على المنتجات)</label>
+          <input type="text" value={formData.discountBadge} onChange={(e) => setFormData({ ...formData, discountBadge: e.target.value })} className="w-full border p-3 rounded text-black" placeholder="مثال: خصم 20%" required />
+        </div>
 
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    {/* منطقة الخطر (هاي كانت مقصوصة بكودك فجبتها متل ما هي) */}
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          <div className="border border-red-200 p-4 rounded bg-red-50 mt-10">
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  <h2 className="font-bold text-red-800 mb-2">منطقة الخطر (Danger Zone)</h2>
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          <p className="text-sm text-red-600 mb-4">هذا الإجراء سيقوم بمسح جميع الطلبات من قاعدة البيانات وتصفير أرقام لوحة الإحصائيات. المنتجات والزبائن لن يتأثروا. لا يمكن التراجع عن هذا الإجراء.</p>
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  <button 
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            type="button" 
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      onClick={handleResetStats} 
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                disabled={saving || resetting} 
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          className="w-full bg-red-600 text-white p-3 rounded font-bold hover:bg-red-700 disabled:bg-gray-400 flex items-center justify-center gap-2"
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  >
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            <span>🗑️</span> {resetting ? "جاري المسح..." : "مسح جميع الطلبات والإحصائيات"}
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    </button>
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          </div>
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              </div>
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                );
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                }
+        <div className="border p-4 rounded bg-gray-50 space-y-4">
+          <h2 className="font-bold text-gray-800">معلومات التواصل والدفع</h2>
+
+          <div>
+            <label className="block text-sm font-bold text-gray-700 mb-1">رقم الواتساب</label>
+            <input type="text" value={formData.whatsapp} onChange={(e) => setFormData({ ...formData, whatsapp: e.target.value })} className="w-full border p-3 rounded text-black" dir="ltr" required />
+          </div>
+
+          <div>
+            <label className="block text-sm font-bold text-gray-700 mb-1">رقم الويش</label>
+            <input type="text" value={formData.whishNumber} onChange={(e) => setFormData({ ...formData, whishNumber: e.target.value })} className="w-full border p-3 rounded text-black" dir="ltr" required />
+          </div>
+
+          <div>
+            <label className="block text-sm font-bold text-gray-700 mb-1">البريد الإلكتروني</label>
+            <input type="email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} className="w-full border p-3 rounded text-black" dir="ltr" required />
+          </div>
+        </div>
+
+        {/* حقل موقع التوصيل الجديد */}
+        <div className="border p-4 rounded bg-blue-50 space-y-4">
+          <h2 className="font-bold text-gray-800">📍 موقع التوصيل</h2>
+          <label className="block text-sm font-bold text-gray-700 mb-1">العنوان الذي يظهر في شريط التوصيل</label>
+          <input
+            type="text"
+            value={formData.deliveryLocation}
+            onChange={(e) => setFormData({ ...formData, deliveryLocation: e.target.value })}
+            className="w-full border p-3 rounded text-black"
+            placeholder="مثال: بيروت، لبنان"
+            required
+          />
+          <p className="text-xs text-gray-500">سيظهر في أعلى الصفحة الرئيسية بجانب أيقونة الموقع 📍</p>
+        </div>
+
+        <div className="flex gap-3 pt-4">
+          <button type="submit" disabled={saving} className="flex-1 bg-red-600 text-white p-3 rounded-lg font-bold hover:bg-red-700 disabled:bg-gray-400">
+            {saving ? "جاري الحفظ..." : "حفظ الإعدادات"}
+          </button>
+          <button type="button" onClick={handleResetStats} disabled={resetting} className="bg-gray-200 text-gray-800 px-6 py-3 rounded-lg font-bold hover:bg-gray-300 disabled:bg-gray-100">
+            {resetting ? "جاري المسح..." : "مسح الطلبات"}
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+}

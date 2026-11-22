@@ -67,15 +67,16 @@ model Coupon {
 }
 
 model Settings {
-  id            String @id @default("global")
-  siteName      String @default("Ali-Boss")
-  heroTitle     String @default("تخفيضات الميجا سيل!")
-  heroSubtitle  String @default("خصومات تصل لـ 70% | توصيل سريع لكل لبنان")
-  heroBtnText   String @default("تسوق الآن")
-  discountBadge String @default("خصم 15%")
-  whatsapp      String @default("96170000000")
-  whishNumber   String @default("0000000")
-  email         String @default("info@aliboss.com")
+  id               String @id @default("global")
+  siteName         String @default("Ali-Boss")
+  heroTitle        String @default("تخفيضات الميجا سيل!")
+  heroSubtitle     String @default("خصومات تصل لـ 70% | توصيل سريع لكل لبنان")
+  heroBtnText      String @default("تسوق الآن")
+  discountBadge    String @default("خصم 15%")
+  whatsapp         String @default("96170000000")
+  whishNumber      String @default("0000000")
+  email            String @default("info@aliboss.com")
+  deliveryLocation String @default("بيروت، لبنان")
 }
 
 model PushSubscription {

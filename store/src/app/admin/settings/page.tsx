@@ -26,9 +26,20 @@ export default function SettingsPage() {
     fetch("/api/settings")
       .then((res) => res.json())
       .then((data) => {
-        setFormData(data);
+        setFormData({
+          siteName: data.siteName || "",
+          heroTitle: data.heroTitle || "",
+          heroSubtitle: data.heroSubtitle || "",
+          heroBtnText: data.heroBtnText || "",
+          discountBadge: data.discountBadge || "",
+          whatsapp: data.whatsapp || "",
+          whishNumber: data.whishNumber || "",
+          email: data.email || "",
+          deliveryLocation: data.deliveryLocation || "بيروت، لبنان",
+        });
         setLoading(false);
-      });
+      })
+      .catch(() => setLoading(false));
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -45,8 +56,7 @@ export default function SettingsPage() {
   };
 
   const handleResetStats = async () => {
-    if (!confirm("هل أنت متأكد من مسح جميع الطلبات والإحصائيات؟ لا يمكن التراجع عن هذا الإجراء!")) return;
-
+    if (!confirm("هل أنت متأكد من مسح جميع الطلبات والإحصائيات؟ لا يمكن التراجع!")) return;
     setResetting(true);
     try {
       const res = await fetch("/api/admin/stats/reset", { method: "POST" });
@@ -95,24 +105,20 @@ export default function SettingsPage() {
 
         <div className="border p-4 rounded bg-gray-50 space-y-4">
           <h2 className="font-bold text-gray-800">معلومات التواصل والدفع</h2>
-
           <div>
             <label className="block text-sm font-bold text-gray-700 mb-1">رقم الواتساب</label>
             <input type="text" value={formData.whatsapp} onChange={(e) => setFormData({ ...formData, whatsapp: e.target.value })} className="w-full border p-3 rounded text-black" dir="ltr" required />
           </div>
-
           <div>
             <label className="block text-sm font-bold text-gray-700 mb-1">رقم الويش</label>
             <input type="text" value={formData.whishNumber} onChange={(e) => setFormData({ ...formData, whishNumber: e.target.value })} className="w-full border p-3 rounded text-black" dir="ltr" required />
           </div>
-
           <div>
             <label className="block text-sm font-bold text-gray-700 mb-1">البريد الإلكتروني</label>
             <input type="email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} className="w-full border p-3 rounded text-black" dir="ltr" required />
           </div>
         </div>
 
-        {/* حقل موقع التوصيل الجديد */}
         <div className="border p-4 rounded bg-blue-50 space-y-4">
           <h2 className="font-bold text-gray-800">📍 موقع التوصيل</h2>
           <label className="block text-sm font-bold text-gray-700 mb-1">العنوان الذي يظهر في شريط التوصيل</label>

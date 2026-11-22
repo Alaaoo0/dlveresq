@@ -6,6 +6,7 @@ export async function GET() {
     const settings = await prisma.settings.findUnique({ where: { id: 'global' } });
     if (!settings) {
       return NextResponse.json({
+        id: 'global',
         siteName: 'توصيل سريع',
         heroTitle: 'جوعان؟ طلبك يوصلك!',
         heroSubtitle: 'أفضل المطاعم، السوبرماركت، والصيدليات في مدينتك',

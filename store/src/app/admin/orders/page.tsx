@@ -43,18 +43,10 @@ export default async function AdminOrdersPage() {
             <div key={order.id} className="bg-white rounded-xl shadow-sm border p-5">
               <div className="flex flex-wrap justify-between items-start gap-4 mb-4">
                 <div>
-                  {/* رقم الطلب الكامل مع زر نسخ */}
                   <div className="flex items-center gap-2 mb-2">
                     <span className="bg-red-100 text-red-700 px-3 py-1 rounded-lg font-mono font-bold text-sm" dir="ltr">
                       #{order.id}
                     </span>
-                    <button
-                      onClick={() => { navigator.clipboard.writeText(order.id); alert('تم نسخ رقم الطلب!'); }}
-                      className="text-gray-500 hover:text-red-600 text-xs"
-                      title="نسخ الرقم"
-                    >
-                      📋
-                    </button>
                   </div>
                   <h3 className="text-lg font-bold text-gray-900">{order.customerName}</h3>
                   <p className="text-gray-600 text-sm" dir="ltr">📞 {order.phone}</p>
@@ -69,7 +61,6 @@ export default async function AdminOrdersPage() {
                 </div>
               </div>
 
-              {/* المنتجات */}
               <div className="bg-gray-50 rounded-lg p-3 mb-4">
                 {order.items.map((item) => (
                   <div key={item.id} className="flex justify-between text-sm py-1">
@@ -79,7 +70,6 @@ export default async function AdminOrdersPage() {
                 ))}
               </div>
 
-              {/* أزرار تغيير الحالة */}
               <div className="flex flex-wrap gap-2">
                 <form action={updateStatus.bind(null, order.id, 'confirmed')}>
                   <button className="bg-purple-600 text-white px-3 py-1 rounded text-sm font-bold hover:bg-purple-700">تأكيد</button>

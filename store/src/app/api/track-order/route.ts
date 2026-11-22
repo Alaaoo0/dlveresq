@@ -1,34 +1,33 @@
-import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
 
 export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
-    const orderId = searchParams.get('id');
+    const id = searchParams.get("id");
 
-    if (!orderId) return NextResponse.json({ message: 'رقم الطلب مطلوب' }, { status: 400 });
+    if (!id) {
+      return NextResponse.json({ message: "رقم الطلب مطلوب" }, { status: 400 });
+    }
 
-    // بندور على الطلب، بغض النظر عن حالة الأحرف (كبير أو صغير)
-    const order = await prisma.order.findFirst({
-      where: { 
-        id: {
-          endsWith: orderId, // بيدور على آخر 6 أحرف عشان نسهل عالزبون
-          mode: 'insensitive'
-        }
-      },
+    const order = await prisma.order.findUnique({
+      where: { id },
       include: {
         items: {
-          include: { product: true }
-        }
-      }
+          include: {
+            product: true,
+          },
+        },
+      },
     });
 
     if (!order) {
-      return NextResponse.json({ message: 'ما لقينا طلب بهالرقم، تأكد من الرقم.' }, { status: 404 });
+      return NextResponse.json({ message: "لم يتم العثور على الطلب" }, { status: 404 });
     }
 
-    return NextResponse.json(order);
+    return NextResponse.json({ order }, { status: 200 });
   } catch (error) {
-    return NextResponse.json({ message: 'فشل جلب تفاصيل الطلب' }, { status: 500 });
+    console.error("خطأ في تتبع الطلب:", error);
+    return NextResponse.json({ message: "حدث خطأ في السيرفر" }, { status: 500 });
   }
 }

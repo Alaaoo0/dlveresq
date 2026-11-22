@@ -2,12 +2,10 @@
 
 import Link from "next/link";
 import { useCart } from "../app/context/CartContext";
-import { useWishlist } from "../../context/WishlistContext";
 import { useState, useEffect } from "react";
 
 export default function Navbar({ siteName = "توصيل سريع" }: { siteName?: string }) {
   const { cart = [] } = useCart() || {};
-  const { wishlist = [] } = useWishlist() || {};
   const [user, setUser] = useState<any>(null);
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -19,7 +17,6 @@ export default function Navbar({ siteName = "توصيل سريع" }: { siteName?
   }, []);
 
   const cartCount = cart.reduce((sum: number, item: any) => sum + (item.quantity || 1), 0);
-  const wishlistCount = wishlist?.length || 0;
 
   const handleLogout = async () => {
     await fetch("/api/auth/logout", { method: "POST" });
@@ -43,9 +40,6 @@ export default function Navbar({ siteName = "توصيل سريع" }: { siteName?
           </Link>
           <Link href="/products" className="text-gray-700 hover:text-red-600 font-bold flex items-center gap-1">
             🛍️ المتجر
-          </Link>
-          <Link href="/careers" className="text-gray-700 hover:text-red-600 font-bold flex items-center gap-1">
-            💼 وظائف
           </Link>
         </nav>
 
@@ -76,11 +70,6 @@ export default function Navbar({ siteName = "توصيل سريع" }: { siteName?
 
           <Link href="/wishlist" className="relative text-gray-700 hover:text-red-600 text-2xl">
             ❤️
-            {wishlistCount > 0 && (
-              <span className="absolute -top-2 -right-2 bg-red-600 text-white text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center">
-                {wishlistCount}
-              </span>
-            )}
           </Link>
 
           <Link href="/orders" className="text-gray-700 hover:text-red-600 text-2xl">
@@ -102,7 +91,6 @@ export default function Navbar({ siteName = "توصيل سريع" }: { siteName?
           <Link href="/" onClick={() => setMenuOpen(false)} className="block text-gray-700 hover:text-red-600 font-bold">🏠 الرئيسية</Link>
           <Link href="/offers" onClick={() => setMenuOpen(false)} className="block text-gray-700 hover:text-red-600 font-bold">🎁 العروض</Link>
           <Link href="/products" onClick={() => setMenuOpen(false)} className="block text-gray-700 hover:text-red-600 font-bold">🛍️ المتجر</Link>
-          <Link href="/careers" onClick={() => setMenuOpen(false)} className="block text-gray-700 hover:text-red-600 font-bold">💼 وظائف</Link>
           {user ? (
             <>
               <Link href="/wallet" onClick={() => setMenuOpen(false)} className="block text-green-700 font-bold">💳 المحفظة: ${user.walletBalance?.toFixed(2)}</Link>

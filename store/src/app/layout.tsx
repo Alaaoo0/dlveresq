@@ -9,9 +9,8 @@ import NotificationPopup from "../components/NotificationPopup";
 import SplashScreen from "../components/SplashScreen";
 import { prisma } from "@/lib/prisma";
 
-// 👈 شلنا سطر export const dynamic = 'force-dynamic'; من هون عشان ما يعمل خطأ
-
-export const instant = false;
+// ✅ البديل الصحيح والمسموح في Next.js لمنع الكاش وجلب البيانات المحدثة
+export const dynamic = "force-dynamic";
 
 const inter = Inter({ subsets: ["latin"] });
 

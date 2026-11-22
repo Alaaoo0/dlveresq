@@ -1,42 +1,35 @@
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
-import bcrypt from 'bcryptjs';
 import { cookies } from 'next/headers';
+
+// ✅ كلمة المرور: خذها من متغير البيئة، أو افتراضياً admin123
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin123';
 
 export async function POST(req: Request) {
   try {
-    const { email, password } = await req.json();
-    const user = await prisma.user.findUnique({ where: { email } });
-    
-    if (!user) {
-      return NextResponse.json({ message: 'الإيميل أو الباسورد غلط' }, { status: 400 });
+    const { password } = await req.json();
+
+    // مقارنة بسيطة وآمنة
+    if (password !== ADMIN_PASSWORD) {
+      return NextResponse.json(
+        { message: 'كلمة المرور غلط!' },
+        { status: 401 }
+      );
     }
 
-    const isValid = await bcrypt.compare(password, user.password);
-    if (!isValid) {
-      return NextResponse.json({ message: 'الإيميل أو الباسورد غلط' }, { status: 400 });
-    }
-
+    // 🔑 ضبط الكوكي الذي يتوقعه الـ middleware
     const cookieStore = await cookies();
-    
-    // ✅ التعديل الأساسي: نحفظ admin_session بقيمة true عشان الـ middleware يسمح بالدخول
     cookieStore.set('admin_session', 'true', {
-      httpOnly: true, 
-      secure: process.env.NODE_ENV === 'production', 
-      maxAge: 60 * 60 * 24 * 7, 
-      path: '/',
-    });
-
-    // (اختياري) نحتفظ بـ user_session أيضاً لاستخدامات أخرى
-    cookieStore.set('user_session', user.id, {
-      httpOnly: true, 
-      secure: process.env.NODE_ENV === 'production', 
-      maxAge: 60 * 60 * 24 * 7, 
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 60 * 60 * 24 * 7, // 7 أيام
       path: '/',
     });
 
     return NextResponse.json({ message: 'تم تسجيل الدخول بنجاح' });
   } catch (error) {
-    return NextResponse.json({ message: 'فشل تسجيل الدخول' }, { status: 500 });
+    return NextResponse.json(
+      { message: 'فشل تسجيل الدخول' },
+      { status: 500 }
+    );
   }
 }

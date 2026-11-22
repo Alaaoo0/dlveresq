@@ -4,17 +4,37 @@ import { prisma } from "@/lib/prisma";
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
-  const settings = await prisma.settings.findUnique({ where: { id: 'global' } });
-  const categories = await prisma.category.findMany({ orderBy: { createdAt: 'desc' } });
-  const products = await prisma.product.findMany({ 
-    where: { stock: { gt: 0 } },
-    orderBy: { createdAt: 'desc' },
-    take: 8 
-  });
+  let settings: any = null;
+  let categories: any[] = [];
+  let products: any[] = [];
+
+  try {
+    // محاولة جلب البيانات من قاعدة البيانات
+    settings = await prisma.settings.findUnique({ where: { id: 'global' } });
+    categories = await prisma.category.findMany({ orderBy: { createdAt: 'desc' } });
+    products = await prisma.product.findMany({ 
+      where: { stock: { gt: 0 } },
+      orderBy: { createdAt: 'desc' },
+      take: 8 
+    });
+  } catch (error) {
+    console.error("خطأ في الاتصال بقاعدة البيانات:", error);
+    // بيانات احتياطية في حال فشل الاتصال حتى لا تنهار الصفحة
+    settings = { 
+      heroTitle: "جوعان؟ طلبك يوصلك!", 
+      heroSubtitle: "مطاعم، سوبرماركت، وصيدليات توصلك لباب البيت", 
+      discountBadge: "توصيل مجاني" 
+    };
+    categories = [
+      { id: '1', name: '🍔 مطاعم' },
+      { id: '2', name: '🛒 سوبرماركت' },
+      { id: '3', name: '💊 صيدليات' }
+    ];
+  }
 
   return (
     <main className="min-h-screen bg-gray-50" dir="rtl">
-      {/* 1. Hero Section (شعار التطبيق والبحث) */}
+      {/* 1. Hero Section */}
       <div className="bg-red-600 text-white pb-16 pt-10 px-4 rounded-b-[2.5rem] shadow-lg">
         <div className="max-w-4xl mx-auto text-center">
           <h1 className="text-3xl md:text-4xl font-black mb-3">
@@ -24,7 +44,6 @@ export default async function HomePage() {
             {settings?.heroSubtitle || "مطاعم، سوبرماركت، وصيدليات توصلك لباب البيت"}
           </p>
           
-          {/* شريط البحث الوهمي (للتصميم) */}
           <div className="bg-white rounded-full p-2 flex items-center shadow-xl max-w-lg mx-auto">
             <span className="text-gray-400 mr-3 text-xl">🔍</span>
             <input 
@@ -40,7 +59,7 @@ export default async function HomePage() {
       </div>
 
       <div className="max-w-5xl mx-auto px-4 -mt-8">
-        {/* 2. الأقسام (Categories) */}
+        {/* 2. الأقسام */}
         <div className="bg-white rounded-2xl shadow-sm p-4 mb-8">
           <h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
             <span>📂</span> الأقسام
@@ -53,17 +72,17 @@ export default async function HomePage() {
                 className="flex-shrink-0 flex flex-col items-center gap-2 min-w-[80px] group"
               >
                 <div className="w-16 h-16 bg-red-50 rounded-2xl flex items-center justify-center text-2xl group-hover:bg-red-100 transition border border-red-100">
-                  {cat.name.split(' ')[0]} {/* يأخذ الإيموجي */}
+                  {cat.name.split(' ')[0]}
                 </div>
                 <span className="text-sm font-semibold text-gray-700 text-center">
-                  {cat.name.split(' ').slice(1).join(' ')} {/* يأخذ النص */}
+                  {cat.name.split(' ').slice(1).join(' ')}
                 </span>
               </Link>
             ))}
           </div>
         </div>
 
-        {/* 3. المنتجات / المطاعم المميزة */}
+        {/* 3. المنتجات المميزة */}
         <div className="mb-12">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
@@ -75,7 +94,7 @@ export default async function HomePage() {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {products.map((product) => (
+            {products.length > 0 ? products.map((product) => (
               <Link key={product.id} href={`/product?slug=${product.slug}`} className="group bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition border border-gray-100">
                 <div className="relative h-40 bg-gray-100">
                   {product.imageUrl ? (
@@ -89,7 +108,6 @@ export default async function HomePage() {
                     </span>
                   )}
                 </div>
-                
                 <div className="p-3">
                   <h3 className="font-bold text-gray-800 text-sm mb-1 line-clamp-1">{product.name}</h3>
                   <div className="flex items-center gap-1 text-xs text-gray-500 mb-2">
@@ -107,7 +125,11 @@ export default async function HomePage() {
                   </div>
                 </div>
               </Link>
-            ))}
+            )) : (
+              <div className="col-span-full text-center py-10 text-gray-500 bg-white rounded-2xl border border-gray-100">
+                لا توجد منتجات متاحة حالياً.
+              </div>
+            )}
           </div>
         </div>
       </div>

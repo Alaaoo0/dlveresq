@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 
-export const instant = false;
+// البديل الصحيح لمنع الكاش وجلب البيانات المحدثة دائماً
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 export default async function ProductsPage({ searchParams }: { searchParams: Promise<{ category?: string }> }) {
   const { category } = await searchParams;

@@ -17,6 +17,11 @@ export async function GET() {
         email: 'support@delivery.com',
         deliveryLocation: 'بيروت، لبنان',
         deliveryFee: 200,
+        storeLatitude: 33.8938,
+        storeLongitude: 35.5018,
+        pricePerKm: 0.5,
+        minDeliveryFee: 100,
+        maxDeliveryFee: 1000,
       });
     }
     return NextResponse.json(settings);
@@ -29,7 +34,6 @@ export async function POST(req: Request) {
   try {
     const data = await req.json();
 
-    // ✅ دعم قيمة 0 (مجاني) بدون ما ترجع 200 — والقيمة بالسنتات
     const deliveryFee = data.deliveryFee !== undefined && data.deliveryFee !== null
       ? parseInt(data.deliveryFee, 10) || 0
       : 200;
@@ -47,6 +51,11 @@ export async function POST(req: Request) {
         email: data.email,
         deliveryLocation: data.deliveryLocation || 'بيروت، لبنان',
         deliveryFee: deliveryFee,
+        storeLatitude: parseFloat(data.storeLatitude) || 33.8938,
+        storeLongitude: parseFloat(data.storeLongitude) || 35.5018,
+        pricePerKm: parseFloat(data.pricePerKm) || 0.5,
+        minDeliveryFee: parseInt(data.minDeliveryFee, 10) || 100,
+        maxDeliveryFee: parseInt(data.maxDeliveryFee, 10) || 1000,
       },
       create: {
         id: 'global',
@@ -60,6 +69,11 @@ export async function POST(req: Request) {
         email: data.email,
         deliveryLocation: data.deliveryLocation || 'بيروت، لبنان',
         deliveryFee: deliveryFee,
+        storeLatitude: parseFloat(data.storeLatitude) || 33.8938,
+        storeLongitude: parseFloat(data.storeLongitude) || 35.5018,
+        pricePerKm: parseFloat(data.pricePerKm) || 0.5,
+        minDeliveryFee: parseInt(data.minDeliveryFee, 10) || 100,
+        maxDeliveryFee: parseInt(data.maxDeliveryFee, 10) || 1000,
       },
     });
     return NextResponse.json(settings);

@@ -50,7 +50,7 @@ export default function CheckoutPage() {
   const [modalMessage, setModalMessage] = useState("");
   const [modalType, setModalType] = useState<"error" | "success">("error");
 
-  const [storeLat, setStoreLat] = useState(33.5638); // ساحة النجمة - صيدا
+  const [storeLat, setStoreLat] = useState(33.5638);
   const [storeLng, setStoreLng] = useState(35.3618);
   const [pricePerKm, setPricePerKm] = useState(0.5);
   const [minFee, setMinFee] = useState(100);
@@ -58,10 +58,8 @@ export default function CheckoutPage() {
 
   const router = useRouter();
 
-  // ✅ التغيير الجوهري: finalTotal = سعر المنتجات فقط (بدون توصيل)
   const discount = appliedCoupon?.discountAmount || 0;
-  const finalTotal = cartTotal - discount; // يُخصم من المحفظة
-  const deliveryPaymentMethod = "cash"; // التوصيل يُدفع نقداً
+  const finalTotal = cartTotal - discount;
 
   const showModal = (message: string, type: "error" | "success" = "error") => {
     setModalMessage(message);
@@ -175,7 +173,6 @@ export default function CheckoutPage() {
     if (!name || !phone || !address) return showModal("عبّي كل الحقول من فضلك");
     if (!selectedZone) return showModal("يرجى اختيار منطقة التوصيل");
     if (userLat === null || userLng === null) return showModal("يرجى تحديد موقعك على الخريطة");
-    // ✅ التحقق: الرصيد >= سعر المنتجات فقط (بدون التوصيل)
     if (userBalance !== null && userBalance < finalTotal / 100) {
       return showModal(
         `عذراً، رصيد محفظتك غير كافٍ لقيمة المنتجات. المطلوب: $${(finalTotal / 100).toFixed(2)}. لديك: $${userBalance.toFixed(2)}`
@@ -198,11 +195,11 @@ export default function CheckoutPage() {
           location: `${userLat},${userLng}`,
           zoneId: selectedZone.id,
           items: cart,
-          total: finalTotal, // ✅ فقط سعر المنتجات (بدون توصيل)
+          total: finalTotal,
           couponId: appliedCoupon?.couponId || null,
           discountAmount: discount,
-          deliveryFee: deliveryFee, // ✅ يُحفظ للعلم فقط، لا يُخصم
-          deliveryPaymentMethod: "cash", // ✅ التوصيل نقداً للسائق
+          deliveryFee: deliveryFee,
+          deliveryPaymentMethod: "cash",
         }),
       });
 
@@ -212,19 +209,55 @@ export default function CheckoutPage() {
         setSuccess(true);
         setOrderId(data.orderId);
 
-        let msg = `🛒 *طلب جديد*\n\n👤 الاسم: ${name}\n📱 الهاتف: ${phone}\n📍 العنوان: ${address}`;
-        msg += `\n\n📍 *موقع الزبون (GPS):*\n${mapsLink}`;
-        msg += `\n📏 *المسافة:* ${distance.toFixed(2)} كم`;
-        msg += `\n🗺️ المنطقة: ${selectedZone.name}`;
-        msg += `\n\n📦 *المنتجات:*\n`;
-        cart.forEach((item: any) => {
-          msg += `- ${item.name} × ${item.quantity} = $${((item.price * item.quantity) / 100).toFixed(2)}\n`;
+        // 📱 رسالة واتساب مفصلة ومنظمة
+        let msg = `━━━━━━━━━━━━━━━━━━━━\n`;
+        msg += `🛒 *طلب جديد - ${new Date().toLocaleDateString('ar-LB')} ${new Date().toLocaleTimeString('ar-LB', { hour: '2-digit', minute: '2-digit' })}*\n`;
+        msg += `━━━━━━━━━━━━━━━━━━━━\n\n`;
+
+        // 👤 معلومات الزبون
+        msg += `👤 *معلومات الزبون:*\n`;
+        msg += `• الاسم: ${name}\n`;
+        msg += `• الهاتف: ${phone}\n`;
+        msg += `• العنوان: ${address}\n\n`;
+
+        // 📍 الموقع على الخريطة
+        msg += `📍 *الموقع على الخريطة:*\n`;
+        msg += `🔗 ${mapsLink}\n`;
+        msg += `• المسافة من المتجر: ${distance.toFixed(2)} كم\n`;
+        msg += `• المنطقة: ${selectedZone.name}\n\n`;
+
+        // 📦 قائمة الطلبات (الفاتورة)
+        msg += `━━━━━━━━━━━━━━━━━━━━\n`;
+        msg += `📦 *تفاصيل الطلب (الفاتورة):*\n`;
+        msg += `━━━━━━━━━━━━━━━━━━━━\n`;
+        let subtotal = 0;
+        cart.forEach((item: any, index: number) => {
+          const itemTotal = (item.price * item.quantity) / 100;
+          subtotal += itemTotal;
+          msg += `${index + 1}. ${item.name}\n`;
+          msg += `   الكمية: ${item.quantity} × $${(item.price / 100).toFixed(2)} = $${itemTotal.toFixed(2)}\n`;
         });
-        if (appliedCoupon)
-          msg += `\n🎟️ الخصم (${appliedCoupon.code}): -$${(discount / 100).toFixed(2)}`;
-        msg += `\n\n💳 *تم الدفع من المحفظة (المنتجات):* $${(finalTotal / 100).toFixed(2)}`;
-        msg += `\n🚚 *مبلغ التوصيل (يُدفع نقداً للسائق):* $${(deliveryFee / 100).toFixed(2)}`;
-        msg += `\n💰 *المجموع الكلي:* $${((finalTotal + deliveryFee) / 100).toFixed(2)}`;
+        msg += `━━━━━━━━━━━━━━━━━━━━\n\n`;
+
+        // 💰 ملخص الفاتورة
+        msg += `💰 *ملخص الفاتورة:*\n`;
+        msg += `• المجموع الفرعي: $${(cartTotal / 100).toFixed(2)}\n`;
+        if (appliedCoupon) {
+          msg += `• الخصم (${appliedCoupon.code}): -$${(discount / 100).toFixed(2)}\n`;
+        }
+        msg += `• قيمة المنتجات (من المحفظة): $${(finalTotal / 100).toFixed(2)}\n`;
+        msg += `• مبلغ التوصيل (نقداً): $${(deliveryFee / 100).toFixed(2)}\n`;
+        msg += `━━━━━━━━━━━━━━━━━━━━\n`;
+        msg += `💵 *المجموع الكلي: $${((finalTotal + deliveryFee) / 100).toFixed(2)}*\n\n`;
+
+        // 💳 طريقة الدفع
+        msg += `💳 *طريقة الدفع:*\n`;
+        msg += `• المنتجات: من المحفظة ✅\n`;
+        msg += `• التوصيل: نقداً عند الاستلام 💵\n\n`;
+
+        msg += `━━━━━━━━━━━━━━━━━━━━\n`;
+        msg += `📋 *رقم الطلب: ${orderId}*\n`;
+        msg += `━━━━━━━━━━━━━━━━━━━━`;
 
         const encodedMsg = encodeURIComponent(msg);
         setWhatsappMessage(encodedMsg);
@@ -256,7 +289,7 @@ export default function CheckoutPage() {
       <div className="max-w-xl mx-auto p-8 mt-20 text-center bg-white rounded-2xl shadow-lg border border-green-100" dir="rtl">
         <div className="text-6xl mb-4">🎉</div>
         <h1 className="text-3xl font-black text-gray-900 mb-2">تم استلام طلبك بنجاح!</h1>
-        <p className="text-gray-600 mb-4">تم خصم قيمة المنتجات من محفظتك. 🚚 <b>مبلغ التوصيل ($ {(deliveryFee / 100).toFixed(2)}) يُدفع نقداً للسائق عند الاستلام.</b></p>
+        <p className="text-gray-600 mb-4">تم خصم قيمة المنتجات من محفظتك. 🚚 <b>مبلغ التوصيل (${(deliveryFee / 100).toFixed(2)}$) يُدفع نقداً للسائق عند الاستلام.</b></p>
 
         <p className="text-gray-700 font-bold mb-2">رقم طلبك:</p>
         <div className="bg-gray-50 border-2 border-dashed border-red-200 rounded-xl p-4 mb-6">
@@ -316,7 +349,6 @@ export default function CheckoutPage() {
           <div className="md:col-span-2 bg-white rounded-xl shadow-sm p-6 border border-gray-100">
             <h2 className="text-xl font-bold mb-6 text-gray-900">معلومات التوصيل</h2>
 
-            {/* 💳 ملخص المحفظة */}
             <div className="bg-gradient-to-l from-green-50 to-white border border-green-200 p-5 rounded-xl mb-6 shadow-sm">
               <div className="flex justify-between items-center mb-2 pb-2 border-b border-green-100">
                 <span className="text-gray-700 font-bold flex items-center gap-1"><span>💳</span> رصيدك الحالي:</span>
@@ -363,7 +395,6 @@ export default function CheckoutPage() {
                 <textarea value={address} onChange={(e) => setAddress(e.target.value)} rows={3} className="w-full border border-gray-300 rounded-lg p-3 text-black focus:ring-2 focus:ring-red-500 outline-none" placeholder="المدينة، الشارع، علامة مميزة..." required></textarea>
               </div>
 
-              {/* 🗺️ خريطة تحديد الموقع */}
               <div className="border-2 border-blue-200 p-4 rounded-xl bg-blue-50">
                 <label className="block text-sm font-bold text-gray-700 mb-2">📍 حدد موقعك على الخريطة</label>
                 <p className="text-xs text-gray-600 mb-3">اضغط على الخريطة لتحديد موقعك، أو استخدم زر GPS. سيتم حساب سعر التوصيل تلقائياً (يُدفع نقداً للسائق).</p>
@@ -405,7 +436,6 @@ export default function CheckoutPage() {
                 )}
               </div>
 
-              {/* 🗺️ اختيار منطقة التوصيل */}
               <div className="bg-purple-50 border border-purple-200 p-4 rounded-xl">
                 <label className="block text-sm font-bold text-gray-700 mb-3">🗺️ اختر منطقة التوصيل</label>
                 {zones.length === 0 ? (

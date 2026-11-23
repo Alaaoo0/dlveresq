@@ -11,7 +11,6 @@ const MapPicker = dynamic(() => import("@/components/MapPicker"), {
   loading: () => <div className="h-80 bg-gray-100 rounded-lg flex items-center justify-center">جاري تحميل الخريطة...</div>,
 });
 
-// حساب المسافة بين نقطتين (Haversine formula)
 function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
   const R = 6371;
   const dLat = (lat2 - lat1) * Math.PI / 180;
@@ -51,17 +50,18 @@ export default function CheckoutPage() {
   const [modalMessage, setModalMessage] = useState("");
   const [modalType, setModalType] = useState<"error" | "success">("error");
 
-  // إعدادات التوصيل الذكي
-  const [storeLat, setStoreLat] = useState(33.8938);
-  const [storeLng, setStoreLng] = useState(35.5018);
+  const [storeLat, setStoreLat] = useState(33.5638); // ساحة النجمة - صيدا
+  const [storeLng, setStoreLng] = useState(35.3618);
   const [pricePerKm, setPricePerKm] = useState(0.5);
   const [minFee, setMinFee] = useState(100);
   const [maxFee, setMaxFee] = useState(1000);
 
   const router = useRouter();
 
-  const totalShipping = deliveryFee;
-  const finalTotal = cartTotal + totalShipping - (appliedCoupon?.discountAmount || 0);
+  // ✅ التغيير الجوهري: finalTotal = سعر المنتجات فقط (بدون توصيل)
+  const discount = appliedCoupon?.discountAmount || 0;
+  const finalTotal = cartTotal - discount; // يُخصم من المحفظة
+  const deliveryPaymentMethod = "cash"; // التوصيل يُدفع نقداً
 
   const showModal = (message: string, type: "error" | "success" = "error") => {
     setModalMessage(message);
@@ -69,12 +69,11 @@ export default function CheckoutPage() {
     setModalOpen(true);
   };
 
-  // حساب سعر التوصيل بناءً على المسافة
   const recalculateDeliveryFee = (lat: number, lng: number) => {
     const dist = calculateDistance(storeLat, storeLng, lat, lng);
     setDistance(dist);
-    let fee = Math.round(dist * pricePerKm * 100); // بالسنتات
-    fee = Math.max(minFee, Math.min(maxFee, fee)); // تطبيق الحدود
+    let fee = Math.round(dist * pricePerKm * 100);
+    fee = Math.max(minFee, Math.min(maxFee, fee));
     setDeliveryFee(fee);
   };
 
@@ -131,7 +130,6 @@ export default function CheckoutPage() {
       })
       .catch(() => {});
 
-    // جلب الإعدادات + إعدادات التوصيل الذكي
     fetch("/api/settings", { cache: "no-store" })
       .then((res) => res.json())
       .then((data) => {
@@ -177,9 +175,10 @@ export default function CheckoutPage() {
     if (!name || !phone || !address) return showModal("عبّي كل الحقول من فضلك");
     if (!selectedZone) return showModal("يرجى اختيار منطقة التوصيل");
     if (userLat === null || userLng === null) return showModal("يرجى تحديد موقعك على الخريطة");
+    // ✅ التحقق: الرصيد >= سعر المنتجات فقط (بدون التوصيل)
     if (userBalance !== null && userBalance < finalTotal / 100) {
       return showModal(
-        `عذراً، رصيد محفظتك غير كافٍ. المطلوب: $${(finalTotal / 100).toFixed(2)}. لديك: $${userBalance.toFixed(2)}`
+        `عذراً، رصيد محفظتك غير كافٍ لقيمة المنتجات. المطلوب: $${(finalTotal / 100).toFixed(2)}. لديك: $${userBalance.toFixed(2)}`
       );
     }
 
@@ -199,10 +198,11 @@ export default function CheckoutPage() {
           location: `${userLat},${userLng}`,
           zoneId: selectedZone.id,
           items: cart,
-          total: finalTotal,
+          total: finalTotal, // ✅ فقط سعر المنتجات (بدون توصيل)
           couponId: appliedCoupon?.couponId || null,
-          discountAmount: appliedCoupon?.discountAmount || 0,
-          deliveryFee: deliveryFee,
+          discountAmount: discount,
+          deliveryFee: deliveryFee, // ✅ يُحفظ للعلم فقط، لا يُخصم
+          deliveryPaymentMethod: "cash", // ✅ التوصيل نقداً للسائق
         }),
       });
 
@@ -221,9 +221,10 @@ export default function CheckoutPage() {
           msg += `- ${item.name} × ${item.quantity} = $${((item.price * item.quantity) / 100).toFixed(2)}\n`;
         });
         if (appliedCoupon)
-          msg += `\n🎟️ الخصم (${appliedCoupon.code}): -$${(appliedCoupon.discountAmount / 100).toFixed(2)}`;
-        msg += `\n🚚 *مبلغ التوصيل:* $${(deliveryFee / 100).toFixed(2)} (مسافة ${distance.toFixed(2)} كم)`;
-        msg += `\n💰 *المجموع النهائي:* $${(finalTotal / 100).toFixed(2)}\n💳 *تم الدفع من المحفظة*`;
+          msg += `\n🎟️ الخصم (${appliedCoupon.code}): -$${(discount / 100).toFixed(2)}`;
+        msg += `\n\n💳 *تم الدفع من المحفظة (المنتجات):* $${(finalTotal / 100).toFixed(2)}`;
+        msg += `\n🚚 *مبلغ التوصيل (يُدفع نقداً للسائق):* $${(deliveryFee / 100).toFixed(2)}`;
+        msg += `\n💰 *المجموع الكلي:* $${((finalTotal + deliveryFee) / 100).toFixed(2)}`;
 
         const encodedMsg = encodeURIComponent(msg);
         setWhatsappMessage(encodedMsg);
@@ -255,7 +256,7 @@ export default function CheckoutPage() {
       <div className="max-w-xl mx-auto p-8 mt-20 text-center bg-white rounded-2xl shadow-lg border border-green-100" dir="rtl">
         <div className="text-6xl mb-4">🎉</div>
         <h1 className="text-3xl font-black text-gray-900 mb-2">تم استلام طلبك بنجاح!</h1>
-        <p className="text-gray-600 mb-4">تم خصم المبلغ من محفظتك، ورح نوصلك قريباً.</p>
+        <p className="text-gray-600 mb-4">تم خصم قيمة المنتجات من محفظتك. 🚚 <b>مبلغ التوصيل ($ {(deliveryFee / 100).toFixed(2)}) يُدفع نقداً للسائق عند الاستلام.</b></p>
 
         <p className="text-gray-700 font-bold mb-2">رقم طلبك:</p>
         <div className="bg-gray-50 border-2 border-dashed border-red-200 rounded-xl p-4 mb-6">
@@ -315,28 +316,33 @@ export default function CheckoutPage() {
           <div className="md:col-span-2 bg-white rounded-xl shadow-sm p-6 border border-gray-100">
             <h2 className="text-xl font-bold mb-6 text-gray-900">معلومات التوصيل</h2>
 
+            {/* 💳 ملخص المحفظة */}
             <div className="bg-gradient-to-l from-green-50 to-white border border-green-200 p-5 rounded-xl mb-6 shadow-sm">
               <div className="flex justify-between items-center mb-2 pb-2 border-b border-green-100">
                 <span className="text-gray-700 font-bold flex items-center gap-1"><span>💳</span> رصيدك الحالي:</span>
                 <span className="text-2xl font-black text-green-700">${userBalance.toFixed(2)}</span>
               </div>
               <div className="flex justify-between items-center mb-2">
-                <span className="text-gray-600 text-sm">المبلغ المطلوب:</span>
+                <span className="text-gray-600 text-sm">قيمة المنتجات (تُخصم من المحفظة):</span>
                 <span className="font-bold text-red-600">${(finalTotal / 100).toFixed(2)}</span>
               </div>
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-gray-600 text-sm">مبلغ التوصيل (يُدفع نقداً للسائق):</span>
+                <span className="font-bold text-orange-600">${(deliveryFee / 100).toFixed(2)}</span>
+              </div>
               <div className="flex justify-between items-center pt-2 mt-2 border-t border-green-100">
-                <span className="text-gray-800 font-bold">الرصيد المتبقي:</span>
+                <span className="text-gray-800 font-bold">الرصيد المتبقي بعد الخصم:</span>
                 <span className={`text-xl font-black ${userBalance - finalTotal / 100 < 0 ? 'text-red-600' : 'text-gray-900'}`}>
                   ${(userBalance - finalTotal / 100).toFixed(2)}
                 </span>
               </div>
               {userBalance >= finalTotal / 100 ? (
                 <p className="text-xs text-green-600 font-bold mt-3 text-center bg-green-100 py-1 rounded">
-                  سيتم خصم ${(finalTotal / 100).toFixed(2)} من محفظتك عند تأكيد الطلب.
+                  سيتم خصم ${(finalTotal / 100).toFixed(2)} من محفظتك. مبلغ التوصيل ${(deliveryFee / 100).toFixed(2)} يُدفع نقداً للسائق عند الاستلام.
                 </p>
               ) : (
                 <p className="text-xs text-red-600 font-bold mt-3 text-center bg-red-100 py-1 rounded">
-                  رصيدك غير كافٍ. <Link href="/wallet" className="underline">اشحن رصيدك هلق</Link>
+                  رصيدك غير كافٍ لقيمة المنتجات. <Link href="/wallet" className="underline">اشحن رصيدك هلق</Link>
                 </p>
               )}
             </div>
@@ -360,7 +366,7 @@ export default function CheckoutPage() {
               {/* 🗺️ خريطة تحديد الموقع */}
               <div className="border-2 border-blue-200 p-4 rounded-xl bg-blue-50">
                 <label className="block text-sm font-bold text-gray-700 mb-2">📍 حدد موقعك على الخريطة</label>
-                <p className="text-xs text-gray-600 mb-3">اضغط على الخريطة لتحديد موقعك، أو استخدم زر GPS. سيتم حساب سعر التوصيل تلقائياً.</p>
+                <p className="text-xs text-gray-600 mb-3">اضغط على الخريطة لتحديد موقعك، أو استخدم زر GPS. سيتم حساب سعر التوصيل تلقائياً (يُدفع نقداً للسائق).</p>
 
                 <MapPicker
                   centerLat={storeLat}
@@ -381,12 +387,12 @@ export default function CheckoutPage() {
                 {userLat !== null && userLng !== null && (
                   <div className="mt-3 bg-white p-3 rounded-lg border border-blue-200">
                     <div className="flex justify-between items-center mb-1">
-                      <span className="text-sm font-bold text-gray-700">📏 المسافة من المتجر:</span>
+                      <span className="text-sm font-bold text-gray-700">📏 المسافة من ساحة النجمة:</span>
                       <span className="font-black text-blue-700">{distance.toFixed(2)} كم</span>
                     </div>
                     <div className="flex justify-between items-center pt-2 border-t border-blue-100">
-                      <span className="text-sm font-bold text-gray-700">🚚 مبلغ التوصيل:</span>
-                      <span className="font-black text-red-600 text-lg">${(deliveryFee / 100).toFixed(2)}</span>
+                      <span className="text-sm font-bold text-gray-700">🚚 مبلغ التوصيل (نقداً):</span>
+                      <span className="font-black text-orange-600 text-lg">${(deliveryFee / 100).toFixed(2)}</span>
                     </div>
                     <p className="text-xs text-gray-500 mt-1">
                       (السعر: ${pricePerKm}/كم | الحد الأدنى: ${(minFee / 100).toFixed(2)} | الحد الأقصى: ${(maxFee / 100).toFixed(2)})
@@ -430,7 +436,7 @@ export default function CheckoutPage() {
               </div>
 
               <button type="submit" disabled={loading || userBalance < finalTotal / 100} className="w-full bg-red-600 text-white font-bold text-lg py-4 rounded-xl mt-4 hover:bg-red-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed">
-                {loading ? "جاري تأكيد الطلب..." : userBalance < finalTotal / 100 ? "الرصيد غير كافٍ" : `تأكيد الطلب - $${(finalTotal / 100).toFixed(2)}`}
+                {loading ? "جاري تأكيد الطلب..." : userBalance < finalTotal / 100 ? "الرصيد غير كافٍ" : `تأكيد الطلب - $${(finalTotal / 100).toFixed(2)} + $${(deliveryFee / 100).toFixed(2)} نقداً`}
               </button>
             </form>
           </div>
@@ -456,17 +462,21 @@ export default function CheckoutPage() {
                   </button>
                 </div>
                 {couponError && <p className="text-red-500 text-xs mt-1">{couponError}</p>}
-                {appliedCoupon && <p className="text-green-600 text-xs mt-1 font-bold">تم تطبيق الكود: -${(appliedCoupon.discountAmount / 100).toFixed(2)}</p>}
+                {appliedCoupon && <p className="text-green-600 text-xs mt-1 font-bold">تم تطبيق الكود: -${(discount / 100).toFixed(2)}</p>}
               </div>
 
               <div className="space-y-2 pt-4 border-t">
                 <div className="flex justify-between text-gray-800 font-semibold"><span>المجموع الفرعي</span><span>${(cartTotal / 100).toFixed(2)}</span></div>
-                {appliedCoupon && <div className="flex justify-between text-green-600 font-bold"><span>الخصم</span><span>-${(appliedCoupon.discountAmount / 100).toFixed(2)}</span></div>}
+                {appliedCoupon && <div className="flex justify-between text-green-600 font-bold"><span>الخصم</span><span>-${(discount / 100).toFixed(2)}</span></div>}
                 <div className="flex justify-between text-gray-800 font-semibold">
-                  <span>🚚 التوصيل</span>
-                  <span>{userLat !== null ? `${distance.toFixed(2)} كم - ` : ''}${(deliveryFee / 100).toFixed(2)}</span>
+                  <span>💳 يُخصم من المحفظة</span>
+                  <span className="font-black text-red-600">${(finalTotal / 100).toFixed(2)}</span>
                 </div>
-                <div className="flex justify-between font-black text-xl text-red-600 mt-4 pt-4 border-t"><span>الإجمالي:</span><span>${(finalTotal / 100).toFixed(2)}</span></div>
+                <div className="flex justify-between text-orange-600 font-bold bg-orange-50 p-2 rounded">
+                  <span>🚚 يُدفع نقداً للسائق</span>
+                  <span>${(deliveryFee / 100).toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between font-black text-xl text-gray-900 mt-4 pt-4 border-t"><span>المجموع الكلي:</span><span>${((finalTotal + deliveryFee) / 100).toFixed(2)}</span></div>
               </div>
             </div>
           </div>

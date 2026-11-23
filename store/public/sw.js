@@ -1,35 +1,30 @@
-const CACHE_NAME = 'ali-boss-store-v1';
-const urlsToCache = [
-  '/',
-  '/manifest.json'
-];
+self.addEventListener("push", (event) => {
+  let data = {};
 
-self.addEventListener('install', (event) => {
+  try {
+    data = event.data ? event.data.json() : {};
+  } catch {
+    data = { body: "وصلتك طلبية جديدة" };
+  }
+
   event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then((cache) => cache.addAll(urlsToCache))
+    self.registration.showNotification(
+      data.title || "🔔 طلبية جديدة",
+      {
+        body: data.body || "المدير أرسل لك طلبية جديدة",
+        tag: data.tag || "new-order",
+        renotify: true,
+        requireInteraction: true,
+        data: { url: "/employee" }
+      }
+    )
   );
 });
 
-self.addEventListener('fetch', (event) => {
-  event.respondWith(
-    caches.match(event.request)
-      .then((response) => response || fetch(event.request))
-  );
-});
-
-self.addEventListener('push', function(event) {
-  const data = event.data ? event.data.json() : { title: 'منتج جديد!', body: 'تفقد متجرنا الآن' };
-  const options = {
-    body: data.body,
-    icon: '/favicon.ico',
-    badge: '/favicon.ico',
-    data: { url: data.url || '/' }
-  };
-  event.waitUntil(self.registration.showNotification(data.title, options));
-});
-
-self.addEventListener('notificationclick', function(event) {
+self.addEventListener("notificationclick", (event) => {
   event.notification.close();
-  event.waitUntil(clients.openWindow(event.notification.data.url));
+
+  event.waitUntil(
+    clients.openWindow("/employee")
+  );
 });

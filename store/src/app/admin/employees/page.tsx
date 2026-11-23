@@ -7,8 +7,7 @@ export default function AdminEmployeesPage() {
   const [employees, setEmployees] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
-  const [formData, setFormData] = useState({ name: "", phone: "", position: "", address: "" });
-
+  const [formData, setFormData] = useState({ name: "", phone: "", position: "", address: "", password: "" });
   const fetchEmployees = () => {
     fetch("/api/employees")
       .then((res) => res.json())

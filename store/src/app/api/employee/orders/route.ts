@@ -54,7 +54,9 @@ export async function GET() {
         deliveryFee: true,
         total: true,
         status: true,
-        createdAt: true,
+employeeResponse: true,
+employeeRespondedAt: true,
+createdAt: true,
         items: {
           select: {
             id: true,

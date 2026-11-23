@@ -36,6 +36,8 @@ model Order {
   discountAmount    Int         @default(0)
   deliveryFee       Int         @default(200)
   location          String?
+  zoneId            String?
+  driverId          String?
   createdAt         DateTime    @default(now())
   userId            String?
   user              User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
@@ -144,4 +146,27 @@ model Employee {
   address     String?
   isAvailable Boolean  @default(true)
   createdAt   DateTime @default(now())
+}
+
+// 🆕 جدول مناطق التوصيل
+model DeliveryZone {
+  id        String   @id @default(cuid())
+  name      String
+  fee       Int      @default(200)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  orders    Order[]
+}
+
+// 🆕 جدول السائقين
+model Driver {
+  id             String    @id @default(cuid())
+  name           String
+  phone          String
+  isOnline       Boolean   @default(false)
+  currentOrderId String?
+  latitude       Float?
+  longitude      Float?
+  lastUpdate     DateTime?
+  createdAt      DateTime  @default(now())
 }

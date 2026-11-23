@@ -99,14 +99,17 @@ model DeliveryZone {
 }
 
 model Employee {
-  id          String   @id @default(cuid())
-  name        String
-  phone       String
-  position    String
-  address     String?
-  isAvailable Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  orders      Order[]
+  id               String   @id @default(cuid())
+  name             String
+  phone            String
+  position         String
+  address          String?
+  isAvailable      Boolean  @default(true)
+  passwordHash     String   @default("")
+  sessionTokenHash String?
+  sessionExpiresAt DateTime?
+  createdAt        DateTime @default(now())
+  orders           Order[]
 }
 
 model PushSubscription {

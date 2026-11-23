@@ -28,6 +28,9 @@ model Order {
   customerName      String
   phone             String
   address           String
+  location          String?     // 👈 الحقل الجديد للموقع GPS
+  zoneId            String?     // 👈 الحقل الجديد لمنطقة التوصيل
+  deliveryFee       Int         @default(200) // 👈 الحقل الجديد
   total             Int
   status            String      @default("pending")
   customerConfirmed Boolean     @default(false)

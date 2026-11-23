@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { createClient } from '@/lib/supabase/server';
 
 export async function POST(req: Request) {
   try {
@@ -22,13 +23,28 @@ export async function POST(req: Request) {
       return NextResponse.json({ message: 'بيانات ناقصة' }, { status: 400 });
     }
 
-    // ✅ التحقق من الرصيد (المنتجات فقط، بدون التوصيل)
-    const user = await prisma.user.findFirst({
-      where: { email: (await req.headers.get('x-user-email')) || undefined },
-    });
+    // ✅ جلب المستخدم من Supabase session (نفس طريقة /api/auth/me)
+    const supabase = createClient();
+    const { data: { user: authUser } } = await supabase.auth.getUser();
 
-    if (user && user.walletBalance < total / 100) {
-      return NextResponse.json({ message: 'رصيد المحفظة غير كافٍ' }, { status: 400 });
+    let userId: string | null = null;
+    let userWalletBalance: number | null = null;
+
+    if (authUser?.email) {
+      const dbUser = await prisma.user.findUnique({
+        where: { email: authUser.email },
+      });
+      if (dbUser) {
+        userId = dbUser.id;
+        userWalletBalance = dbUser.walletBalance;
+      }
+    }
+
+    // ✅ التحقق من الرصيد (المنتجات فقط، بدون التوصيل)
+    if (userWalletBalance !== null && userWalletBalance < total / 100) {
+      return NextResponse.json({ 
+        message: `رصيد المحفظة غير كافٍ. المطلوب: $${(total / 100).toFixed(2)}. لديك: $${userWalletBalance.toFixed(2)}` 
+      }, { status: 400 });
     }
 
     // ✅ إنشاء الطلب
@@ -43,6 +59,7 @@ export async function POST(req: Request) {
         deliveryFee: deliveryFee || 0, // ✅ يُحفظ للعلم فقط
         discountAmount: discountAmount || 0,
         couponId: couponId || null,
+        userId: userId,
         items: {
           create: items.map((item: any) => ({
             productId: item.id,
@@ -55,9 +72,9 @@ export async function POST(req: Request) {
     });
 
     // ✅ خصم قيمة المنتجات فقط من المحفظة (بدون التوصيل)
-    if (user && total > 0) {
+    if (userId && total > 0) {
       await prisma.user.update({
-        where: { id: user.id },
+        where: { id: userId },
         data: {
           walletBalance: {
             decrement: total / 100,
@@ -67,7 +84,7 @@ export async function POST(req: Request) {
 
       await prisma.walletTransaction.create({
         data: {
-          userId: user.id,
+          userId: userId,
           amount: total / 100,
           type: 'ORDER_PAYMENT',
           status: 'COMPLETED',

@@ -42,6 +42,7 @@ model Order {
   user              User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
   items             OrderItem[]
 employeeId        String?
+assignedAt        DateTime?
 employee          Employee?   @relation(fields: [employeeId], references: [id], onDelete: SetNull)
 }
 

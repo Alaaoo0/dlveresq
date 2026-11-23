@@ -29,6 +29,8 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
+  // ✅ إضافة هذا السطر لإجبار الوضع الفاتح ومنع الوضع الليلي التلقائي
+  colorScheme: "light", 
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
@@ -47,20 +49,19 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       email: 'info@aliboss.com',
       deliveryLocation: 'بيروت، لبنان',
       deliveryFee: 200,
-      // 👇 الحقول الجديدة المطلوبة من Prisma
-      storeLatitude: 33.8938,
-      storeLongitude: 35.5018,
+      storeLatitude: 33.5638,
+      storeLongitude: 35.3618,
       pricePerKm: 0.5,
       minDeliveryFee: 100,
       maxDeliveryFee: 1000,
       createdAt: new Date(),
-    } as any; // استخدام as any هنا آمن تماماً لأنه مجرد fallback افتراضي
+    } as any;
   }
 
   return (
-    <html lang="ar" dir="rtl">
-      <body className={inter.className}>
-
+    // ✅ إزالة dark:class وإجبار الخلفية البيضاء والنص الأسود
+    <html lang="ar" dir="rtl" className="light">
+      <body className={`${inter.className} bg-white text-gray-900 antialiased`}>
         <SplashScreen siteName={settings?.siteName || "Ali-Boss"} />
 
         <CartProvider>

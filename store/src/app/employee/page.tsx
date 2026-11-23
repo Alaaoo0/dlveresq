@@ -21,6 +21,8 @@ type Order = {
   deliveryFee: number;
   total: number;
   status: string;
+  employeeResponse: string;
+  employeeRespondedAt?: string | null;
   createdAt: string;
   items: {
     id: string;
@@ -128,6 +130,43 @@ export default function EmployeePage() {
     }
   }
 
+  async function respondToOrder(
+    orderId: string,
+    responseType: "accepted" | "rejected"
+  ) {
+    setBusy(orderId);
+    setError("");
+
+    try {
+      const response = await fetch(
+        `/api/employee/orders/${orderId}/response`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ response: responseType }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "تعذر إرسال الرد");
+      }
+
+      setOrders((oldOrders) =>
+        oldOrders.map((order) =>
+          order.id === orderId
+            ? { ...order, employeeResponse: responseType }
+            : order
+        )
+      );
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "حدث خطأ");
+    } finally {
+      setBusy("");
+    }
+  }
+
   async function updateOrder(orderId: string, status: string) {
     setBusy(orderId);
     setError("");
@@ -193,7 +232,13 @@ export default function EmployeePage() {
   }
 
   const activeOrders = orders.filter(
-    (order) => order.status !== "delivered"
+    (order) =>
+      order.employeeResponse === "accepted" &&
+      order.status !== "delivered"
+  );
+
+  const waitingOrders = orders.filter(
+    (order) => order.employeeResponse === "pending"
   );
 
   return (
@@ -268,6 +313,10 @@ export default function EmployeePage() {
         ) : (
           <div className="space-y-4">
             {orders.map((order) => {
+              const isWaiting = order.employeeResponse === "pending";
+              const isRejected = order.employeeResponse === "rejected";
+              const isAccepted = order.employeeResponse === "accepted";
+
               const nextStatus = statuses.find(
                 (status) =>
                   status.value ===
@@ -285,19 +334,37 @@ export default function EmployeePage() {
               return (
                 <article
                   key={order.id}
-                  className="bg-gray-900 border border-gray-800 rounded-2xl p-5"
+                  className={`bg-gray-900 border rounded-2xl p-5 ${
+                    isWaiting
+                      ? "border-yellow-500"
+                      : "border-gray-800"
+                  }`}
                 >
                   <div className="flex justify-between items-center gap-2 mb-4">
                     <h3 className="font-bold text-lg">
                       طلب #{order.id.slice(-6)}
                     </h3>
-                    <span className="text-yellow-400 text-sm font-bold">
-                      {statusNames[order.status] || order.status}
+
+                    <span className={`text-sm font-bold ${
+                      isWaiting
+                        ? "text-yellow-400"
+                        : isRejected
+                        ? "text-red-400"
+                        : "text-green-400"
+                    }`}>
+                      {isWaiting
+                        ? "بانتظار موافقتك"
+                        : isRejected
+                        ? "تم رفض الطلبية"
+                        : isAccepted
+                        ? statusNames[order.status] || order.status
+                        : "طلب غير محدد"}
                     </span>
                   </div>
 
                   <div className="space-y-2 text-sm">
                     <p>👤 الزبون: {order.customerName}</p>
+
                     <p>
                       📞 الهاتف:{" "}
                       <a
@@ -307,6 +374,7 @@ export default function EmployeePage() {
                         {order.phone}
                       </a>
                     </p>
+
                     <p>📍 العنوان: {order.address}</p>
 
                     {order.location && (
@@ -324,6 +392,7 @@ export default function EmployeePage() {
 
                     <div className="border-t border-gray-700 pt-3 mt-3">
                       <p className="font-bold mb-2">المنتجات:</p>
+
                       {order.items?.map((item) => (
                         <p key={item.id} className="text-gray-300">
                           • {item.product?.name || "منتج"} × {item.quantity}
@@ -334,12 +403,43 @@ export default function EmployeePage() {
                     <p className="text-gray-300">
                       أجرة التوصيل: {order.deliveryFee}
                     </p>
+
                     <p className="font-bold text-yellow-400">
                       إجمالي الطلب: {order.total}
                     </p>
                   </div>
 
-                  {nextStatus ? (
+                  {isWaiting && (
+                    <div className="mt-5 space-y-3">
+                      <p className="text-yellow-300 text-center font-bold">
+                        🔔 المدير أرسل لك طلبية جديدة
+                      </p>
+
+                      <div className="grid grid-cols-2 gap-3">
+                        <button
+                          onClick={() =>
+                            respondToOrder(order.id, "accepted")
+                          }
+                          disabled={busy === order.id}
+                          className="bg-green-600 text-white font-bold rounded-xl p-3 disabled:opacity-50"
+                        >
+                          {busy === order.id ? "جاري الإرسال..." : "✓ قبول الطلبية"}
+                        </button>
+
+                        <button
+                          onClick={() =>
+                            respondToOrder(order.id, "rejected")
+                          }
+                          disabled={busy === order.id}
+                          className="bg-red-600 text-white font-bold rounded-xl p-3 disabled:opacity-50"
+                        >
+                          {busy === order.id ? "جاري الإرسال..." : "✕ رفض الطلبية"}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {isAccepted && nextStatus && (
                     <button
                       onClick={() =>
                         updateOrder(order.id, nextStatus.value)
@@ -351,9 +451,17 @@ export default function EmployeePage() {
                         ? "جاري التحديث..."
                         : nextStatus.label}
                     </button>
-                  ) : (
+                  )}
+
+                  {isAccepted && !nextStatus && (
                     <div className="mt-5 bg-green-950 text-green-400 rounded-xl p-3 text-center font-bold">
                       ✅ تم تسليم الطلب
+                    </div>
+                  )}
+
+                  {isRejected && (
+                    <div className="mt-5 bg-red-950 text-red-300 rounded-xl p-3 text-center font-bold">
+                      تم رفض الطلبية وإبلاغ النظام بالرد.
                     </div>
                   )}
                 </article>

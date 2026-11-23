@@ -8,39 +8,113 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Employee {
-  id                String             @id @default(cuid())
-  name              String
-  phone             String             @unique
-  passwordHash      String
-  position          String
-  isAvailable       Boolean            @default(true)
-  sessionTokenHash  String?
-  sessionExpiresAt  DateTime?
-  createdAt         DateTime           @default(now())
-  updatedAt         DateTime           @updatedAt
-
-  orders            Order[]
-  pushSubscriptions PushSubscription[]
+model Product {
+  id          String      @id @default(cuid())
+  name        String
+  slug        String      @unique
+  description String?
+  price       Int
+  weight      Int
+  imageUrl    String?
+  stock       Int         @default(10)
+  category    String      @default("أجهزة الكترونية")
+  variants    String?
+  createdAt   DateTime    @default(now())
+  orderItems  OrderItem[]
+  reviews     Review[]
 }
 
 model Order {
-  id                    String     @id @default(cuid())
+  id                    String      @id @default(cuid())
   customerName          String
   phone                 String
   address               String
   location              String?
-  deliveryFee           Float      @default(0)
-  total                 Float
-  status                String     @default("confirmed")
-  items                 Json
-  createdAt             DateTime   @default(now())
-
+  zoneId                String?
+  deliveryFee           Int         @default(200)
+  total                 Int
+  status                String      @default("pending")
+  customerConfirmed     Boolean     @default(false)
+  couponId              String?
+  coupon                Coupon?     @relation(fields: [couponId], references: [id])
+  discountAmount        Int         @default(0)
+  createdAt             DateTime    @default(now())
+  userId                String?
+  user                  User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
+  items                 OrderItem[]
   employeeId            String?
-  employee              Employee?  @relation(fields: [employeeId], references: [id], onDelete: SetNull)
   assignedAt            DateTime?
-  employeeResponse      String     @default("none")
+  employeeResponse      String      @default("none")
   employeeRespondedAt   DateTime?
+  employee              Employee?   @relation(fields: [employeeId], references: [id], onDelete: SetNull)
+}
+
+model OrderItem {
+  id        String  @id @default(cuid())
+  orderId   String
+  productId String
+  quantity  Int
+  price     Int
+  variant   String?
+  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+}
+
+model Coupon {
+  id            String      @id @default(cuid())
+  code          String      @unique
+  type          CouponType
+  value         Float
+  minOrderValue Float       @default(0)
+  maxUses       Int?
+  usedCount     Int         @default(0)
+  isActive      Boolean     @default(true)
+  expiresAt     DateTime?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  orders        Order[]
+}
+
+model Settings {
+  id               String @id @default("global")
+  siteName         String @default("Ali-Boss")
+  heroTitle        String @default("تخفيضات الميجا سيل!")
+  heroSubtitle     String @default("خصومات تصل لـ 70% | توصيل سريع لكل لبنان")
+  heroBtnText      String @default("تسوق الآن")
+  discountBadge    String @default("خصم 15%")
+  whatsapp         String @default("96170000000")
+  whishNumber      String @default("0000000")
+  email            String @default("info@aliboss.com")
+  deliveryLocation String @default("بيروت، لبنان")
+  deliveryFee      Int    @default(200)
+  storeLatitude    Float  @default(33.8938)
+  storeLongitude   Float  @default(35.5018)
+  pricePerKm       Float  @default(0.5)
+  minDeliveryFee   Int    @default(100)
+  maxDeliveryFee   Int    @default(1000)
+}
+
+model DeliveryZone {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  fee       Int      @default(0)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+}
+
+model Employee {
+  id                String             @id @default(cuid())
+  name              String
+  phone             String
+  position          String
+  address           String?
+  isAvailable       Boolean            @default(true)
+  passwordHash      String             @default("")
+  sessionTokenHash  String?
+  sessionExpiresAt  DateTime?
+  createdAt         DateTime           @default(now())
+  orders            Order[]
+  pushSubscriptions PushSubscription[]
 }
 
 model PushSubscription {
@@ -53,4 +127,50 @@ model PushSubscription {
   createdAt  DateTime  @default(now())
 
   @@index([employeeId])
+}
+
+enum CouponType {
+  PERCENTAGE
+  FIXED
+}
+
+model Review {
+  id        String   @id @default(cuid())
+  rating    Int      @default(5)
+  comment   String?
+  imageUrl  String?
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  createdAt DateTime @default(now())
+}
+
+model User {
+  id                 String              @id @default(cuid())
+  name               String
+  email              String              @unique
+  password           String
+  phone              String?
+  walletBalance      Float               @default(0)
+  createdAt          DateTime            @default(now())
+  orders             Order[]
+  reviews            Review[]
+  walletTransactions WalletTransaction[]
+}
+
+model WalletTransaction {
+  id        String   @id @default(cuid())
+  userId    String
+  amount    Float
+  type      String
+  status    String   @default("PENDING")
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Category {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  createdAt DateTime @default(now())
 }

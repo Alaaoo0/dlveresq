@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
 type Employee = {
@@ -54,6 +54,94 @@ export default function EmployeePage() {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState("");
   const [error, setError] = useState("");
+  const [audioEnabled, setAudioEnabled] = useState(false);
+  const [newOrderAlert, setNewOrderAlert] = useState(0);
+
+  const seenOrderIds = useRef<Set<string> | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const audioEnabledRef = useRef(false);
+
+  function playNotification() {
+    try {
+      const AudioContextClass =
+        window.AudioContext ||
+        (window as typeof window & {
+          webkitAudioContext?: typeof AudioContext;
+        }).webkitAudioContext;
+
+      if (!AudioContextClass) return;
+
+      if (!audioContextRef.current) {
+        audioContextRef.current = new AudioContextClass();
+      }
+
+      const audioContext = audioContextRef.current;
+
+      if (audioContext.state === "suspended") {
+        void audioContext.resume();
+      }
+
+      const playTone = (frequency: number, startTime: number) => {
+        const oscillator = audioContext.createOscillator();
+        const gain = audioContext.createGain();
+
+        oscillator.type = "sine";
+        oscillator.frequency.value = frequency;
+
+        gain.gain.setValueAtTime(0.001, startTime);
+        gain.gain.exponentialRampToValueAtTime(
+          0.25,
+          startTime + 0.03
+        );
+        gain.gain.exponentialRampToValueAtTime(
+          0.001,
+          startTime + 0.35
+        );
+
+        oscillator.connect(gain);
+        gain.connect(audioContext.destination);
+
+        oscillator.start(startTime);
+        oscillator.stop(startTime + 0.36);
+      };
+
+      const now = audioContext.currentTime;
+
+      playTone(880, now);
+      playTone(1175, now + 0.25);
+      playTone(880, now + 0.5);
+    } catch (err) {
+      console.error("Notification sound error:", err);
+    }
+  }
+
+  async function enableSound() {
+    try {
+      const AudioContextClass =
+        window.AudioContext ||
+        (window as typeof window & {
+          webkitAudioContext?: typeof AudioContext;
+        }).webkitAudioContext;
+
+      if (!AudioContextClass) {
+        setError("متصفحك لا يدعم تشغيل صوت التنبيه");
+        return;
+      }
+
+      if (!audioContextRef.current) {
+        audioContextRef.current = new AudioContextClass();
+      }
+
+      await audioContextRef.current.resume();
+
+      audioEnabledRef.current = true;
+      setAudioEnabled(true);
+
+      playNotification();
+    } catch {
+      setError("تعذر تفعيل الصوت. حاول مرة أخرى.");
+    }
+  }
 
   async function loadData() {
     try {
@@ -80,14 +168,43 @@ export default function EmployeePage() {
         throw new Error(ordersData.message || "تعذر تحميل الطلبات");
       }
 
-      setOrders(
-        Array.isArray(ordersData)
-          ? ordersData
-          : ordersData.orders || []
+      const freshOrders: Order[] = Array.isArray(ordersData)
+        ? ordersData
+        : ordersData.orders || [];
+
+      const currentIds = new Set(
+        freshOrders.map((order) => order.id)
       );
+
+      if (seenOrderIds.current === null) {
+        // أول تحميل: لا نصدر صوتاً للطلبات القديمة
+        seenOrderIds.current = currentIds;
+      } else {
+        const newOrders = freshOrders.filter(
+          (order) =>
+            !seenOrderIds.current!.has(order.id) &&
+            order.employeeResponse === "pending"
+        );
+
+        if (newOrders.length > 0) {
+          setNewOrderAlert((count) => count + newOrders.length);
+
+          if (audioEnabledRef.current) {
+            playNotification();
+          }
+        }
+
+        // تحديث قائمة الطلبات التي سبق رؤيتها
+        seenOrderIds.current = currentIds;
+      }
+
+      setOrders(freshOrders);
+      setError("");
     } catch (err) {
       setError(
-        err instanceof Error ? err.message : "حدث خطأ أثناء تحميل البيانات"
+        err instanceof Error
+          ? err.message
+          : "حدث خطأ أثناء تحميل البيانات"
       );
     } finally {
       setLoading(false);
@@ -95,7 +212,19 @@ export default function EmployeePage() {
   }
 
   useEffect(() => {
-    loadData();
+    void loadData();
+
+    const interval = window.setInterval(() => {
+      void loadData();
+    }, 10000);
+
+    return () => {
+      window.clearInterval(interval);
+      if (audioContextRef.current) {
+        void audioContextRef.current.close();
+        audioContextRef.current = null;
+      }
+    };
   }, []);
 
   async function toggleAvailability() {
@@ -217,7 +346,10 @@ export default function EmployeePage() {
 
   if (loading) {
     return (
-      <main dir="rtl" className="min-h-screen bg-gray-950 text-white flex items-center justify-center">
+      <main
+        dir="rtl"
+        className="min-h-screen bg-gray-950 text-white flex items-center justify-center"
+      >
         جاري تحميل بيانات الموظف...
       </main>
     );
@@ -225,7 +357,10 @@ export default function EmployeePage() {
 
   if (!employee) {
     return (
-      <main dir="rtl" className="min-h-screen bg-gray-950 text-white flex items-center justify-center">
+      <main
+        dir="rtl"
+        className="min-h-screen bg-gray-950 text-white flex items-center justify-center"
+      >
         يرجى تسجيل الدخول...
       </main>
     );
@@ -262,6 +397,34 @@ export default function EmployeePage() {
           </button>
         </header>
 
+        <section className="bg-gray-900 border border-gray-800 rounded-2xl p-4 mb-5">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="font-bold">🔔 صوت تنبيه الطلبيات</p>
+              <p className="text-gray-400 text-sm mt-1">
+                {audioEnabled
+                  ? "الصوت مفعّل أثناء فتح الصفحة"
+                  : "فعّل الصوت حتى تسمع عند وصول طلبية جديدة"}
+              </p>
+            </div>
+
+            <button
+              onClick={enableSound}
+              className={`px-4 py-3 rounded-xl font-bold ${
+                audioEnabled ? "bg-green-700" : "bg-yellow-500 text-black"
+              }`}
+            >
+              {audioEnabled ? "✓ الصوت مفعّل" : "تفعيل صوت التنبيه"}
+            </button>
+          </div>
+
+          {newOrderAlert > 0 && (
+            <div className="mt-4 bg-yellow-950 border border-yellow-700 rounded-xl p-3 text-yellow-300 font-bold">
+              🔔 وصلتك {newOrderAlert} طلبية جديدة!
+            </div>
+          )}
+        </section>
+
         <section className="bg-gray-900 border border-gray-800 rounded-2xl p-5 mb-5">
           <h2 className="text-xl font-bold">{employee.name}</h2>
           <p className="text-gray-400 mt-1">{employee.phone}</p>
@@ -270,8 +433,14 @@ export default function EmployeePage() {
           <div className="flex items-center justify-between mt-5 gap-3">
             <div>
               <p className="font-bold">حالة العمل</p>
-              <p className={`text-sm mt-1 ${employee.isAvailable ? "text-green-400" : "text-red-400"}`}>
-                {employee.isAvailable ? "متاح لاستلام الطلبات" : "غير متاح"}
+              <p
+                className={`text-sm mt-1 ${
+                  employee.isAvailable ? "text-green-400" : "text-red-400"
+                }`}
+              >
+                {employee.isAvailable
+                  ? "متاح لاستلام الطلبات"
+                  : "غير متاح"}
               </p>
             </div>
 
@@ -279,9 +448,7 @@ export default function EmployeePage() {
               onClick={toggleAvailability}
               disabled={busy === "availability"}
               className={`px-5 py-3 rounded-xl font-bold disabled:opacity-50 ${
-                employee.isAvailable
-                  ? "bg-red-600"
-                  : "bg-green-600"
+                employee.isAvailable ? "bg-red-600" : "bg-green-600"
               }`}
             >
               {busy === "availability"
@@ -335,9 +502,7 @@ export default function EmployeePage() {
                 <article
                   key={order.id}
                   className={`bg-gray-900 border rounded-2xl p-5 ${
-                    isWaiting
-                      ? "border-yellow-500"
-                      : "border-gray-800"
+                    isWaiting ? "border-yellow-500" : "border-gray-800"
                   }`}
                 >
                   <div className="flex justify-between items-center gap-2 mb-4">
@@ -345,13 +510,15 @@ export default function EmployeePage() {
                       طلب #{order.id.slice(-6)}
                     </h3>
 
-                    <span className={`text-sm font-bold ${
-                      isWaiting
-                        ? "text-yellow-400"
-                        : isRejected
-                        ? "text-red-400"
-                        : "text-green-400"
-                    }`}>
+                    <span
+                      className={`text-sm font-bold ${
+                        isWaiting
+                          ? "text-yellow-400"
+                          : isRejected
+                          ? "text-red-400"
+                          : "text-green-400"
+                      }`}
+                    >
                       {isWaiting
                         ? "بانتظار موافقتك"
                         : isRejected
@@ -423,7 +590,9 @@ export default function EmployeePage() {
                           disabled={busy === order.id}
                           className="bg-green-600 text-white font-bold rounded-xl p-3 disabled:opacity-50"
                         >
-                          {busy === order.id ? "جاري الإرسال..." : "✓ قبول الطلبية"}
+                          {busy === order.id
+                            ? "جاري الإرسال..."
+                            : "✓ قبول الطلبية"}
                         </button>
 
                         <button
@@ -433,7 +602,9 @@ export default function EmployeePage() {
                           disabled={busy === order.id}
                           className="bg-red-600 text-white font-bold rounded-xl p-3 disabled:opacity-50"
                         >
-                          {busy === order.id ? "جاري الإرسال..." : "✕ رفض الطلبية"}
+                          {busy === order.id
+                            ? "جاري الإرسال..."
+                            : "✕ رفض الطلبية"}
                         </button>
                       </div>
                     </div>
@@ -471,11 +642,20 @@ export default function EmployeePage() {
         )}
 
         <button
-          onClick={loadData}
+          onClick={() => {
+            setNewOrderAlert(0);
+            void loadData();
+          }}
           className="w-full mt-6 border border-gray-700 rounded-xl p-3 text-gray-300"
         >
           🔄 تحديث الطلبات
         </button>
+
+        {waitingOrders.length > 0 && (
+          <p className="text-center text-yellow-400 text-sm mt-4">
+            لديك {waitingOrders.length} طلبية بانتظار موافقتك
+          </p>
+        )}
 
       </div>
     </main>

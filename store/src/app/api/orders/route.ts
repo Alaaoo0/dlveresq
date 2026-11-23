@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 
 export async function POST(req: Request) {
@@ -17,92 +16,75 @@ export async function POST(req: Request) {
       couponId,
       discountAmount,
       deliveryFee,
-      deliveryPaymentMethod = 'cash',
     } = body;
 
     if (!customerName || !phone || !address || !items || items.length === 0) {
       return NextResponse.json({ message: 'بيانات ناقصة' }, { status: 400 });
     }
 
-    // ✅ إنشاء Supabase client من cookies مباشرة (الطريقة الصحيحة في Next.js 16)
+    // ✅ نفس طريقة /api/auth/me - قراءة الكوكيز user_session
     const cookieStore = await cookies();
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          getAll: () => cookieStore.getAll(),
-          setAll: () => {},
-        },
-      }
-    );
+    const userId = cookieStore.get('user_session')?.value;
 
-    const { data: { user: authUser } } = await supabase.auth.getUser();
-
-    let userId: string | null = null;
-    let userWalletBalance: number | null = null;
-
-    if (authUser?.email) {
-      const dbUser = await prisma.user.findUnique({
-        where: { email: authUser.email },
-      });
-      if (dbUser) {
-        userId = dbUser.id;
-        userWalletBalance = dbUser.walletBalance;
-      }
+    if (!userId) {
+      return NextResponse.json({ message: 'يجب تسجيل الدخول أولاً' }, { status: 401 });
     }
 
-    // ✅ التحقق من الرصيد (المنتجات فقط)
-    if (userWalletBalance !== null && userWalletBalance < total / 100) {
-      return NextResponse.json({ 
-        message: `رصيد المحفظة غير كافٍ. المطلوب: $${(total / 100).toFixed(2)}. لديك: $${userWalletBalance.toFixed(2)}` 
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) {
+      return NextResponse.json({ message: 'المستخدم غير موجود' }, { status: 401 });
+    }
+
+    // ✅ التحقق من الرصيد (المنتجات فقط، التوصيل نقداً)
+    if (user.walletBalance < total / 100) {
+      return NextResponse.json({
+        message: `رصيد المحفظة غير كافٍ. المطلوب: $${(total / 100).toFixed(2)}. لديك: $${user.walletBalance.toFixed(2)}`,
       }, { status: 400 });
     }
 
-    // ✅ إنشاء الطلب
-    const order = await prisma.order.create({
-      data: {
-        customerName,
-        phone,
-        address,
-        location: location || null,
-        zoneId: zoneId || null,
-        total: Math.round(total),
-        deliveryFee: deliveryFee || 0,
-        discountAmount: discountAmount || 0,
-        couponId: couponId || null,
-        userId: userId,
-        items: {
-          create: items.map((item: any) => ({
-            productId: item.id,
-            quantity: item.quantity,
-            price: item.price,
-            variant: item.variant || null,
-          })),
-        },
-      },
-    });
-
-    // ✅ خصم قيمة المنتجات فقط من المحفظة
-    if (userId && total > 0) {
-      await prisma.user.update({
-        where: { id: userId },
+    // ✅ إنشاء الطلب + خصم المحفظة في transaction (سوا أو ولا)
+    const order = await prisma.$transaction(async (tx) => {
+      const createdOrder = await tx.order.create({
         data: {
-          walletBalance: {
-            decrement: total / 100,
+          customerName,
+          phone,
+          address,
+          location: location || null,
+          zoneId: zoneId || null,
+          total: Math.round(total),
+          deliveryFee: deliveryFee || 0,
+          discountAmount: discountAmount || 0,
+          couponId: couponId || null,
+          userId: user.id,
+          items: {
+            create: items.map((item: any) => ({
+              productId: item.id,
+              quantity: item.quantity,
+              price: item.price,
+              variant: item.variant || null,
+            })),
           },
         },
       });
 
-      await prisma.walletTransaction.create({
+      // خصم قيمة المنتجات من المحفظة
+      await tx.user.update({
+        where: { id: user.id },
+        data: { walletBalance: { decrement: total / 100 } },
+      });
+
+      // تسجيل العملية في سجل المحفظة
+      await tx.walletTransaction.create({
         data: {
-          userId: userId,
+          userId: user.id,
           amount: total / 100,
           type: 'ORDER_PAYMENT',
           status: 'COMPLETED',
         },
       });
-    }
+
+      return createdOrder;
+    });
 
     return NextResponse.json({ orderId: order.id, message: 'تم إنشاء الطلب بنجاح' });
   } catch (error) {
@@ -116,12 +98,8 @@ export async function GET() {
     const orders = await prisma.order.findMany({
       orderBy: { createdAt: 'desc' },
       include: {
-        items: {
-          include: { product: true },
-        },
-        user: {
-          select: { id: true, name: true, email: true },
-        },
+        items: { include: { product: true } },
+        user: { select: { id: true, name: true, email: true } },
       },
     });
     return NextResponse.json(orders);

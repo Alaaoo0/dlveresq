@@ -12,7 +12,7 @@ export default function CheckoutPage() {
   const [address, setAddress] = useState("");
   const [zones, setZones] = useState<any[]>([]);
   const [selectedZone, setSelectedZone] = useState<any>(null);
-  const [deliveryFee, setDeliveryFee] = useState(200);
+  const [deliveryFee, setDeliveryFee] = useState(0); // 👈 الافتراضي 0، والقيمة الحقيقية تجي من الإعدادات
   const [location, setLocation] = useState("");
   const [locationStatus, setLocationStatus] = useState<"idle" | "success" | "denied" | "loading">("idle");
   const [loading, setLoading] = useState(false);
@@ -88,11 +88,14 @@ export default function CheckoutPage() {
       })
       .catch(() => {});
 
-    // جلب واتساب
+    // ✅ جلب واتساب + مبلغ التوصيل من الإعدادات (بالسنتات، ويدعم 0)
     fetch("/api/settings", { cache: "no-store" })
       .then((res) => res.json())
       .then((data) => {
         if (data.whatsapp) setStoreWhatsapp(data.whatsapp);
+        if (data.deliveryFee !== undefined && data.deliveryFee !== null) {
+          setDeliveryFee(parseInt(data.deliveryFee, 10) || 0);
+        }
       })
       .catch(() => {});
 
@@ -101,7 +104,7 @@ export default function CheckoutPage() {
 
   const handleZoneSelect = (zone: any) => {
     setSelectedZone(zone);
-    setDeliveryFee(zone.fee);
+    // 👈 السعر جاي من الإعدادات، مش من المنطقة
   };
 
   const handleApplyCoupon = async () => {
@@ -330,14 +333,14 @@ export default function CheckoutPage() {
                         }`}
                       >
                         <div className="font-bold text-gray-800 text-sm">{zone.name}</div>
-                        <div className="text-purple-600 font-black text-lg">${(zone.fee / 100).toFixed(2)}</div>
+                        <div className="text-purple-600 font-black text-lg">${(deliveryFee / 100).toFixed(2)}</div>
                       </button>
                     ))}
                   </div>
                 )}
                 {selectedZone && (
                   <p className="text-sm text-purple-700 font-bold mt-3 bg-purple-100 p-2 rounded">
-                    ✅ تم اختيار: {selectedZone.name} - التوصيل: ${(selectedZone.fee / 100).toFixed(2)}
+                    ✅ تم اختيار: {selectedZone.name} - التوصيل: ${(deliveryFee / 100).toFixed(2)}
                   </p>
                 )}
               </div>

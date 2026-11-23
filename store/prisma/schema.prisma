@@ -106,6 +106,7 @@ model Employee {
   address     String?
   isAvailable Boolean  @default(true)
   createdAt   DateTime @default(now())
+  orders      Order[]
 }
 
 model PushSubscription {

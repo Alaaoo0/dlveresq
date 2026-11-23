@@ -28,9 +28,9 @@ model Order {
   customerName      String
   phone             String
   address           String
-  location          String?     // 👈 الحقل الجديد للموقع GPS
-  zoneId            String?     // 👈 الحقل الجديد لمنطقة التوصيل
-  deliveryFee       Int         @default(200) // 👈 الحقل الجديد
+  location          String?
+  zoneId            String?
+  deliveryFee       Int         @default(200)
   total             Int
   status            String      @default("pending")
   customerConfirmed Boolean     @default(false)
@@ -81,6 +81,11 @@ model Settings {
   email            String @default("info@aliboss.com")
   deliveryLocation String @default("بيروت، لبنان")
   deliveryFee      Int    @default(200)
+  storeLatitude    Float  @default(33.8938)
+  storeLongitude   Float  @default(35.5018)
+  pricePerKm       Float  @default(0.5)
+  minDeliveryFee   Int    @default(100)
+  maxDeliveryFee   Int    @default(1000)
 }
 
 model DeliveryZone {

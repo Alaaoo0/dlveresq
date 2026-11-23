@@ -46,6 +46,22 @@ const statusNames: Record<string, string> = {
   delivered: "تم التسليم",
 };
 
+function urlBase64ToUint8Array(base64String: string) {
+  const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding)
+    .replace(/-/g, "+")
+    .replace(/_/g, "/");
+
+  const rawData = window.atob(base64);
+  const outputArray = new Uint8Array(rawData.length);
+
+  for (let i = 0; i < rawData.length; ++i) {
+    outputArray[i] = rawData.charCodeAt(i);
+  }
+
+  return outputArray;
+}
+
 export default function EmployeePage() {
   const router = useRouter();
 
@@ -56,6 +72,8 @@ export default function EmployeePage() {
   const [error, setError] = useState("");
   const [audioEnabled, setAudioEnabled] = useState(false);
   const [newOrderAlert, setNewOrderAlert] = useState(0);
+  const [pushEnabled, setPushEnabled] = useState(false);
+  const [pushBusy, setPushBusy] = useState(false);
 
   const seenOrderIds = useRef<Set<string> | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
@@ -143,6 +161,103 @@ export default function EmployeePage() {
     }
   }
 
+  async function enablePushNotifications() {
+    setPushBusy(true);
+    setError("");
+
+    try {
+      if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
+        throw new Error("متصفحك لا يدعم إشعارات الموبايل");
+      }
+
+      if (!("Notification" in window)) {
+        throw new Error("الإشعارات غير مدعومة في هذا المتصفح");
+      }
+
+      const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+
+      if (!publicKey) {
+        throw new Error("مفتاح الإشعارات العام غير موجود في إعدادات الموقع");
+      }
+
+      const permission = await Notification.requestPermission();
+
+      if (permission !== "granted") {
+        throw new Error("يجب السماح بالإشعارات من إعدادات المتصفح");
+      }
+
+      const registration = await navigator.serviceWorker.register("/sw.js");
+      await navigator.serviceWorker.ready;
+
+      let subscription = await registration.pushManager.getSubscription();
+
+      if (!subscription) {
+        subscription = await registration.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: urlBase64ToUint8Array(publicKey),
+        });
+      }
+
+      const response = await fetch("/api/employee/push/subscribe", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          subscription: subscription.toJSON(),
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "تعذر حفظ اشتراك الإشعارات");
+      }
+
+      setPushEnabled(true);
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "تعذر تفعيل إشعارات الموبايل"
+      );
+    } finally {
+      setPushBusy(false);
+    }
+  }
+
+  async function checkPushStatus() {
+    try {
+      if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
+        return;
+      }
+
+      const registration = await navigator.serviceWorker.getRegistration("/");
+
+      if (!registration) return;
+
+      const subscription = await registration.pushManager.getSubscription();
+
+      if (subscription && Notification.permission === "granted") {
+        setPushEnabled(true);
+
+        const response = await fetch("/api/employee/push/subscribe", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            subscription: subscription.toJSON(),
+          }),
+        });
+
+        if (!response.ok) {
+          setPushEnabled(false);
+        }
+      }
+    } catch (err) {
+      console.error("Push status error:", err);
+    }
+  }
+
   async function loadData() {
     try {
       const meResponse = await fetch("/api/employee/me", {
@@ -177,7 +292,6 @@ export default function EmployeePage() {
       );
 
       if (seenOrderIds.current === null) {
-        // أول تحميل: لا نصدر صوتاً للطلبات القديمة
         seenOrderIds.current = currentIds;
       } else {
         const newOrders = freshOrders.filter(
@@ -194,7 +308,6 @@ export default function EmployeePage() {
           }
         }
 
-        // تحديث قائمة الطلبات التي سبق رؤيتها
         seenOrderIds.current = currentIds;
       }
 
@@ -213,6 +326,7 @@ export default function EmployeePage() {
 
   useEffect(() => {
     void loadData();
+    void checkPushStatus();
 
     const interval = window.setInterval(() => {
       void loadData();
@@ -220,6 +334,7 @@ export default function EmployeePage() {
 
     return () => {
       window.clearInterval(interval);
+
       if (audioContextRef.current) {
         void audioContextRef.current.close();
         audioContextRef.current = null;
@@ -379,7 +494,6 @@ export default function EmployeePage() {
   return (
     <main dir="rtl" className="min-h-screen bg-gray-950 text-white p-4">
       <div className="max-w-3xl mx-auto">
-
         <header className="flex items-center justify-between gap-3 mb-6">
           <div>
             <h1 className="text-2xl font-bold">🛵 لوحة الموظف</h1>
@@ -396,6 +510,35 @@ export default function EmployeePage() {
             تسجيل الخروج
           </button>
         </header>
+
+        <section className="bg-gray-900 border border-gray-800 rounded-2xl p-4 mb-5">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="font-bold">🔔 إشعارات الموبايل</p>
+              <p className="text-gray-400 text-sm mt-1">
+                {pushEnabled
+                  ? "إشعارات الطلبات مفعّلة"
+                  : "فعّل الإشعارات حتى تصلك الطلبات على هاتفك"}
+              </p>
+            </div>
+
+            <button
+              onClick={enablePushNotifications}
+              disabled={pushBusy || pushEnabled}
+              className={`px-4 py-3 rounded-xl font-bold disabled:opacity-50 ${
+                pushEnabled
+                  ? "bg-green-700"
+                  : "bg-blue-600"
+              }`}
+            >
+              {pushBusy
+                ? "جاري التفعيل..."
+                : pushEnabled
+                ? "✓ الإشعارات مفعّلة"
+                : "تفعيل إشعارات الموبايل"}
+            </button>
+          </div>
+        </section>
 
         <section className="bg-gray-900 border border-gray-800 rounded-2xl p-4 mb-5">
           <div className="flex flex-wrap items-center justify-between gap-3">
@@ -656,7 +799,6 @@ export default function EmployeePage() {
             لديك {waitingOrders.length} طلبية بانتظار موافقتك
           </p>
         )}
-
       </div>
     </main>
   );

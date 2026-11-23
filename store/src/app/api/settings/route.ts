@@ -28,12 +28,12 @@ export async function GET() {
 export async function POST(req: Request) {
   try {
     const data = await req.json();
-    
-    // ✅ استخدام ?? بدلاً من || عشان 0 ما يتحول لـ 200
-    const deliveryFee = data.deliveryFee !== undefined && data.deliveryFee !== null 
-      ? parseInt(data.deliveryFee) 
+
+    // ✅ دعم قيمة 0 (مجاني) بدون ما ترجع 200 — والقيمة بالسنتات
+    const deliveryFee = data.deliveryFee !== undefined && data.deliveryFee !== null
+      ? parseInt(data.deliveryFee, 10) || 0
       : 200;
-    
+
     const settings = await prisma.settings.upsert({
       where: { id: 'global' },
       update: {

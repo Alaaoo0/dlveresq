@@ -10,7 +10,9 @@ export default function CheckoutPage() {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
-  const [deliveryFee, setDeliveryFee] = useState(200); // من الإعدادات - الزبون ما يعدلو
+  const [zones, setZones] = useState<any[]>([]);
+  const [selectedZone, setSelectedZone] = useState<any>(null);
+  const [deliveryFee, setDeliveryFee] = useState(200);
   const [location, setLocation] = useState("");
   const [locationStatus, setLocationStatus] = useState<"idle" | "success" | "denied" | "loading">("idle");
   const [loading, setLoading] = useState(false);
@@ -30,7 +32,7 @@ export default function CheckoutPage() {
 
   const router = useRouter();
 
-  const totalShipping = deliveryFee; // بالسنتات
+  const totalShipping = deliveryFee;
   const finalTotal = cartTotal + totalShipping - (appliedCoupon?.discountAmount || 0);
 
   const showModal = (message: string, type: "error" | "success" = "error") => {
@@ -39,7 +41,6 @@ export default function CheckoutPage() {
     setModalOpen(true);
   };
 
-  // 📍 تحديد الموقع تلقائياً عند فتح الصفحة
   const autoDetectLocation = () => {
     if (!navigator.geolocation) {
       setLocationStatus("denied");
@@ -77,18 +78,31 @@ export default function CheckoutPage() {
         router.push("/login");
       });
 
-    // جلب الإعدادات (واتساب + مبلغ التوصيل)
+    // جلب المناطق
+    fetch("/api/delivery-zones", { cache: "no-store" })
+      .then((res) => res.json())
+      .then((data) => {
+        if (Array.isArray(data) && data.length > 0) {
+          setZones(data);
+        }
+      })
+      .catch(() => {});
+
+    // جلب واتساب
     fetch("/api/settings", { cache: "no-store" })
       .then((res) => res.json())
       .then((data) => {
         if (data.whatsapp) setStoreWhatsapp(data.whatsapp);
-        if (data.deliveryFee) setDeliveryFee(data.deliveryFee);
       })
       .catch(() => {});
 
-    // 📍 تحديد الموقع تلقائياً
     autoDetectLocation();
   }, [router]);
+
+  const handleZoneSelect = (zone: any) => {
+    setSelectedZone(zone);
+    setDeliveryFee(zone.fee);
+  };
 
   const handleApplyCoupon = async () => {
     if (!couponCode) return;
@@ -116,6 +130,7 @@ export default function CheckoutPage() {
     e.preventDefault();
     if (!cart || cart.length === 0) return showModal("السلة فاضية!");
     if (!name || !phone || !address) return showModal("عبّي كل الحقول من فضلك");
+    if (!selectedZone) return showModal("يرجى اختيار منطقة التوصيل");
     if (userBalance !== null && userBalance < finalTotal / 100) {
       return showModal(
         `عذراً، رصيد محفظتك غير كافٍ. المطلوب: $${(finalTotal / 100).toFixed(2)}. لديك: $${userBalance.toFixed(2)}`
@@ -136,6 +151,7 @@ export default function CheckoutPage() {
           phone,
           address: fullAddress,
           location: location,
+          zoneId: selectedZone.id,
           items: cart,
           total: finalTotal,
           couponId: appliedCoupon?.couponId || null,
@@ -150,10 +166,9 @@ export default function CheckoutPage() {
         setSuccess(true);
         setOrderId(data.orderId);
 
-        // 📱 رسالة واتساب فيها الموقع تلقائياً
-        let msg = `🛒 *طلب جديد*\n\n👤 الاسم: ${name}\n📱 الهاتف: ${phone}\n📍 العنوان: ${address}`;
+        let msg = `🛒 *طلب جديد*\n\n👤 الاسم: ${name}\n📱 الهاتف: ${phone}\n📍 العنوان: ${address}\n🗺️ المنطقة: ${selectedZone.name}`;
         if (mapsLink) {
-          msg += `\n\n🗺️ *موقع الزبون (GPS):*\n${mapsLink}`;
+          msg += `\n\n📍 *موقع الزبون (GPS):*\n${mapsLink}`;
         }
         msg += `\n\n📦 *المنتجات:*\n`;
         cart.forEach((item: any) => {
@@ -161,7 +176,7 @@ export default function CheckoutPage() {
         });
         if (appliedCoupon)
           msg += `\n🎟️ الخصم (${appliedCoupon.code}): -$${(appliedCoupon.discountAmount / 100).toFixed(2)}`;
-        msg += `\n🚚 *مبلغ التوصيل:* $${(deliveryFee / 100).toFixed(2)}`;
+        msg += `\n🚚 *مبلغ التوصيل (${selectedZone.name}):* $${(deliveryFee / 100).toFixed(2)}`;
         msg += `\n💰 *المجموع النهائي:* $${(finalTotal / 100).toFixed(2)}\n💳 *تم الدفع من المحفظة*`;
 
         const encodedMsg = encodeURIComponent(msg);
@@ -169,7 +184,6 @@ export default function CheckoutPage() {
         window.dispatchEvent(new Event("refreshNavbar"));
         if (clearCart) clearCart();
 
-        // فتح واتساب تلقائياً
         setTimeout(() => {
           window.open(`https://wa.me/${storeWhatsapp}?text=${encodedMsg}`, "_blank");
         }, 800);
@@ -228,7 +242,6 @@ export default function CheckoutPage() {
   return (
     <>
       <div className="max-w-5xl mx-auto p-4 md:p-6 mt-8 bg-gray-50 min-h-screen" dir="rtl">
-        {/* زر الرجوع */}
         <div className="mb-4">
           <button onClick={() => router.back()} className="text-gray-600 hover:text-black font-bold flex items-center gap-2 bg-white px-4 py-2 rounded-lg shadow-sm">
             <span>→</span> رجوع للخلف
@@ -298,7 +311,38 @@ export default function CheckoutPage() {
                 <textarea value={address} onChange={(e) => setAddress(e.target.value)} rows={3} className="w-full border border-gray-300 rounded-lg p-3 text-black focus:ring-2 focus:ring-red-500 outline-none" placeholder="المدينة، الشارع، علامة مميزة..." required></textarea>
               </div>
 
-              {/* 📍 حالة الموقع - تلقائي بدون ما الزبون يعمل شي */}
+              {/* 🗺️ اختيار منطقة التوصيل */}
+              <div className="bg-purple-50 border border-purple-200 p-4 rounded-xl">
+                <label className="block text-sm font-bold text-gray-700 mb-3">🗺️ اختر منطقة التوصيل</label>
+                {zones.length === 0 ? (
+                  <p className="text-gray-500 text-sm">جاري تحميل المناطق...</p>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-60 overflow-y-auto">
+                    {zones.map((zone) => (
+                      <button
+                        key={zone.id}
+                        type="button"
+                        onClick={() => handleZoneSelect(zone)}
+                        className={`p-3 rounded-lg border-2 text-right transition-all ${
+                          selectedZone?.id === zone.id
+                            ? 'border-purple-600 bg-purple-100'
+                            : 'border-gray-200 bg-white hover:border-purple-300'
+                        }`}
+                      >
+                        <div className="font-bold text-gray-800 text-sm">{zone.name}</div>
+                        <div className="text-purple-600 font-black text-lg">${(zone.fee / 100).toFixed(2)}</div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {selectedZone && (
+                  <p className="text-sm text-purple-700 font-bold mt-3 bg-purple-100 p-2 rounded">
+                    ✅ تم اختيار: {selectedZone.name} - التوصيل: ${(selectedZone.fee / 100).toFixed(2)}
+                  </p>
+                )}
+              </div>
+
+              {/* 📍 الموقع التلقائي */}
               <div className="bg-blue-50 border border-blue-200 p-4 rounded-xl">
                 <label className="block text-sm font-bold text-gray-700 mb-2">📍 موقعك (تلقائي)</label>
                 {locationStatus === "loading" && (
@@ -363,7 +407,7 @@ export default function CheckoutPage() {
                 {appliedCoupon && <div className="flex justify-between text-green-600 font-bold"><span>الخصم</span><span>-${(appliedCoupon.discountAmount / 100).toFixed(2)}</span></div>}
                 <div className="flex justify-between text-gray-800 font-semibold">
                   <span>🚚 التوصيل</span>
-                  <span>${(deliveryFee / 100).toFixed(2)}</span>
+                  <span>{selectedZone ? `${selectedZone.name} - ` : ''}${(deliveryFee / 100).toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between font-black text-xl text-red-600 mt-4 pt-4 border-t"><span>الإجمالي:</span><span>${(finalTotal / 100).toFixed(2)}</span></div>
               </div>

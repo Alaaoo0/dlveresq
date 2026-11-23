@@ -47,7 +47,14 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       email: 'info@aliboss.com',
       deliveryLocation: 'بيروت، لبنان',
       deliveryFee: 200,
-    };
+      // 👇 الحقول الجديدة المطلوبة من Prisma
+      storeLatitude: 33.8938,
+      storeLongitude: 35.5018,
+      pricePerKm: 0.5,
+      minDeliveryFee: 100,
+      maxDeliveryFee: 1000,
+      createdAt: new Date(),
+    } as any; // استخدام as any هنا آمن تماماً لأنه مجرد fallback افتراضي
   }
 
   return (

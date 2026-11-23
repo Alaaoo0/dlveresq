@@ -66,7 +66,10 @@ export async function assignEmployee(
 
   await prisma.order.update({
     where: { id: orderId },
-    data: { employeeId: employee.id },
+   data: {
+  employeeId: employee.id,
+  assignedAt: new Date(),
+},
   });
 
   revalidatePath("/admin/orders");

@@ -37,7 +37,10 @@ export default function SettingsPage() {
           whishNumber: data.whishNumber || "",
           email: data.email || "",
           deliveryLocation: data.deliveryLocation || "بيروت، لبنان",
-          deliveryFee: data.deliveryFee || 200,
+          // ✅ إصلاح: السماح بقيمة 0
+          deliveryFee: data.deliveryFee !== undefined && data.deliveryFee !== null 
+            ? parseInt(data.deliveryFee) 
+            : 200,
         });
         setLoading(false);
       })
@@ -134,11 +137,11 @@ export default function SettingsPage() {
             />
           </div>
           <div>
-            <label className="block text-sm font-bold text-gray-700 mb-1">💰 مبلغ التوصيل (بالسنتات - مثال: 200 = $2.00)</label>
+            <label className="block text-sm font-bold text-gray-700 mb-1">💰 مبلغ التوصيل (بالسنتات - مثال: 200 = $2.00، 0 = مجاني)</label>
             <input
               type="number"
               value={formData.deliveryFee}
-              onChange={(e) => setFormData({ ...formData, deliveryFee: parseInt(e.target.value) || 0 })}
+              onChange={(e) => setFormData({ ...formData, deliveryFee: e.target.value === '' ? 0 : parseInt(e.target.value) || 0 })}
               className="w-full border p-3 rounded text-black text-lg font-bold"
               min="0"
               step="50"
@@ -147,7 +150,7 @@ export default function SettingsPage() {
             />
             <p className="text-xs text-gray-500 mt-2">
               المبلغ الحالي: <span className="font-bold text-red-600">${(formData.deliveryFee / 100).toFixed(2)}</span>
-              — سيُضاف تلقائياً على كل طلب، والزبون ما بيحددو.
+              — اكتب 0 لجعل التوصيل مجاني.
             </p>
           </div>
         </div>

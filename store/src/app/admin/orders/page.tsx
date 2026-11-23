@@ -160,7 +160,10 @@ export default async function AdminOrdersPage() {
               <div className="flex flex-wrap justify-between items-start gap-4 mb-4">
                 <div>
                   <div className="flex items-center gap-2 mb-2">
-                    <span className="bg-red-100 text-red-700 px-3 py-1 rounded-lg font-mono font-bold text-sm" dir="ltr">
+                    <span
+                      className="bg-red-100 text-red-700 px-3 py-1 rounded-lg font-mono font-bold text-sm"
+                      dir="ltr"
+                    >
                       #{order.id}
                     </span>
                   </div>
@@ -183,9 +186,11 @@ export default async function AdminOrdersPage() {
                   <p className="text-2xl font-black text-red-600">
                     ${(order.total / 100).toFixed(2)}
                   </p>
-                  <span className={`inline-block px-3 py-1 rounded-full text-xs font-bold ${
-                    statusColors[order.status] || statusColors.pending
-                  }`}>
+                  <span
+                    className={`inline-block px-3 py-1 rounded-full text-xs font-bold ${
+                      statusColors[order.status] || statusColors.pending
+                    }`}
+                  >
                     {statusLabels[order.status] || order.status}
                   </span>
                 </div>
@@ -193,7 +198,10 @@ export default async function AdminOrdersPage() {
 
               <div className="bg-gray-50 rounded-lg p-3 mb-4">
                 {order.items.map((item) => (
-                  <div key={item.id} className="flex justify-between text-sm py-1">
+                  <div
+                    key={item.id}
+                    className="flex justify-between text-sm py-1"
+                  >
                     <span>
                       {item.product?.name || "منتج محذوف"} × {item.quantity}
                     </span>
@@ -210,10 +218,38 @@ export default async function AdminOrdersPage() {
                 </p>
 
                 {order.employee ? (
-                  <p className="text-sm text-green-700 mb-2">
-                    الموظف الحالي: {order.employee.name}
-                    {!order.employee.isAvailable && " (غير متاح حالياً)"}
-                  </p>
+                  <div className="mb-3">
+                    <p className="text-sm text-green-700 font-bold">
+                      الموظف الحالي: {order.employee.name}
+                      {!order.employee.isAvailable &&
+                        " (غير متاح حالياً)"}
+                    </p>
+
+                    <p className="text-sm font-bold mt-2">
+                      رد الموظف:
+                      {order.employeeResponse === "pending" && (
+                        <span className="text-orange-600">
+                          {" "}⏳ بانتظار القبول
+                        </span>
+                      )}
+                      {order.employeeResponse === "accepted" && (
+                        <span className="text-green-600">
+                          {" "}✅ قبل الطلبية
+                        </span>
+                      )}
+                      {order.employeeResponse === "rejected" && (
+                        <span className="text-red-600">
+                          {" "}❌ رفض الطلبية
+                        </span>
+                      )}
+                      {(!order.employeeResponse ||
+                        order.employeeResponse === "none") && (
+                        <span className="text-gray-500">
+                          {" "}لم يرد بعد
+                        </span>
+                      )}
+                    </p>
+                  </div>
                 ) : (
                   <p className="text-sm text-red-600 mb-2">
                     لم يتم إسناد الطلب لأي موظف بعد.
@@ -244,7 +280,9 @@ export default async function AdminOrdersPage() {
                         }
                       >
                         {employee.name} - {employee.phone}
-                        {!employee.isAvailable ? " (غير متاح)" : " (متاح)"}
+                        {!employee.isAvailable
+                          ? " (غير متاح)"
+                          : " (متاح)"}
                       </option>
                     ))}
                   </select>

@@ -3,6 +3,12 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import dynamic from "next/dynamic";
+
+const MapPicker = dynamic(() => import("@/components/MapPicker"), {
+  ssr: false,
+  loading: () => <div className="h-80 bg-gray-100 rounded-lg flex items-center justify-center">جاري تحميل الخريطة...</div>,
+});
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -17,6 +23,11 @@ export default function SettingsPage() {
     email: "",
     deliveryLocation: "بيروت، لبنان",
     deliveryFee: 0,
+    storeLatitude: 33.8938,
+    storeLongitude: 35.5018,
+    pricePerKm: 0.5,
+    minDeliveryFee: 100,
+    maxDeliveryFee: 1000,
   });
 
   const [loading, setLoading] = useState(true);
@@ -37,10 +48,14 @@ export default function SettingsPage() {
           whishNumber: data.whishNumber || "",
           email: data.email || "",
           deliveryLocation: data.deliveryLocation || "بيروت، لبنان",
-          // ✅ إصلاح: قيمة 0 تُقبل كما هي (سنتات)
           deliveryFee: data.deliveryFee !== undefined && data.deliveryFee !== null
             ? parseInt(data.deliveryFee, 10) || 0
             : 0,
+          storeLatitude: parseFloat(data.storeLatitude) || 33.8938,
+          storeLongitude: parseFloat(data.storeLongitude) || 35.5018,
+          pricePerKm: parseFloat(data.pricePerKm) || 0.5,
+          minDeliveryFee: parseInt(data.minDeliveryFee, 10) || 100,
+          maxDeliveryFee: parseInt(data.maxDeliveryFee, 10) || 1000,
         });
         setLoading(false);
       })
@@ -53,7 +68,6 @@ export default function SettingsPage() {
     await fetch("/api/settings", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      // ✅ تحويل الكسور لعدد صحيح سنتات (0.1 → 0، 10 → 10، 200 → 200)
       body: JSON.stringify({
         ...formData,
         deliveryFee: Math.round(parseFloat(formData.deliveryFee as any) || 0),
@@ -84,7 +98,7 @@ export default function SettingsPage() {
   if (loading) return <p className="text-center mt-20 text-black">جاري التحميل...</p>;
 
   return (
-    <div className="max-w-2xl mx-auto p-6 mt-10 bg-white rounded-lg shadow-md border" dir="rtl">
+    <div className="max-w-3xl mx-auto p-6 mt-10 bg-white rounded-lg shadow-md border" dir="rtl">
       <div className="mb-4">
         <Link href="/admin" className="text-gray-600 hover:text-black font-bold flex items-center gap-2">
           <span>←</span> رجوع للوحة التحكم
@@ -93,7 +107,7 @@ export default function SettingsPage() {
 
       <h1 className="text-2xl font-bold mb-6 text-gray-900">إعدادات المتجر العامة</h1>
 
-      <form onSubmit={handleSubmit} className="space-y-5">
+      <form onSubmit={handleSubmit} className="space-y-6">
         <div>
           <label className="block text-sm font-bold text-gray-700 mb-2">اسم المتجر (اللوجو)</label>
           <input type="text" value={formData.siteName} onChange={(e) => setFormData({ ...formData, siteName: e.target.value })} className="w-full border p-3 rounded text-black" required />
@@ -128,34 +142,81 @@ export default function SettingsPage() {
         </div>
 
         <div className="border p-4 rounded bg-blue-50 space-y-4">
-          <h2 className="font-bold text-gray-800">📍 موقع التوصيل ومبلغه</h2>
+          <h2 className="font-bold text-gray-800">📍 موقع التوصيل ومبلغه (الطريقة القديمة - ثابت)</h2>
           <div>
             <label className="block text-sm font-bold text-gray-700 mb-1">العنوان الذي يظهر في شريط التوصيل</label>
-            <input
-              type="text"
-              value={formData.deliveryLocation}
-              onChange={(e) => setFormData({ ...formData, deliveryLocation: e.target.value })}
-              className="w-full border p-3 rounded text-black"
-              placeholder="مثال: بيروت، لبنان"
-              required
-            />
+            <input type="text" value={formData.deliveryLocation} onChange={(e) => setFormData({ ...formData, deliveryLocation: e.target.value })} className="w-full border p-3 rounded text-black" placeholder="مثال: بيروت، لبنان" required />
           </div>
           <div>
-            <label className="block text-sm font-bold text-gray-700 mb-1">💰 مبلغ التوصيل (بالسنتات — مثال: 200 = $2.00، 10 = $0.10، 0 = مجاني)</label>
-            <input
-              type="number"
-              value={formData.deliveryFee}
-              onChange={(e) => setFormData({ ...formData, deliveryFee: e.target.value === '' ? 0 : Math.max(0, Math.round(parseFloat(e.target.value) || 0)) })}
-              className="w-full border p-3 rounded text-black text-lg font-bold"
-              min="0"
-              step="any"
-              dir="ltr"
-              required
-            />
+            <label className="block text-sm font-bold text-gray-700 mb-1">💰 مبلغ التوصيل الثابت (بالسنتات — 0 = مجاني)</label>
+            <input type="number" value={formData.deliveryFee} onChange={(e) => setFormData({ ...formData, deliveryFee: e.target.value === '' ? 0 : Math.max(0, Math.round(parseFloat(e.target.value) || 0)) })} className="w-full border p-3 rounded text-black text-lg font-bold" min="0" step="any" dir="ltr" />
             <p className="text-xs text-gray-500 mt-2">
               المبلغ الحالي: <span className="font-bold text-red-600">${((Number(formData.deliveryFee) || 0) / 100).toFixed(2)}</span>
-              {' '}— اكتب 0 لجعل التوصيل مجاني.
+              {' '}— يُستخدم فقط إذا لم يُفعّل التوصيل الذكي بالأسفل.
             </p>
+          </div>
+        </div>
+
+        {/* 🗺️ التوصيل الذكي */}
+        <div className="border-2 border-purple-200 p-5 rounded-xl bg-purple-50 space-y-4">
+          <h2 className="font-bold text-gray-800 flex items-center gap-2">
+            <span>🗺️</span> التوصيل الذكي (مثل يلا جو)
+          </h2>
+          <p className="text-sm text-gray-600">
+            الزبون يحدد موقعه على الخريطة، ويُحسب سعر التوصيل تلقائياً بناءً على المسافة من المتجر.
+          </p>
+
+          <div>
+            <label className="block text-sm font-bold text-gray-700 mb-2">
+              📌 موقع المتجر (نقطة الانطلاق) — اضغط على الخريطة لتحديد الموقع
+            </label>
+            <MapPicker
+              centerLat={formData.storeLatitude}
+              centerLng={formData.storeLongitude}
+              onLocationSelect={(lat, lng) => setFormData({ ...formData, storeLatitude: lat, storeLongitude: lng })}
+              height="h-72"
+              showStoreMarker={true}
+            />
+            <div className="grid grid-cols-2 gap-3 mt-3">
+              <div>
+                <label className="text-xs font-bold text-gray-600">خط العرض (Latitude)</label>
+                <input type="number" step="any" value={formData.storeLatitude} onChange={(e) => setFormData({ ...formData, storeLatitude: parseFloat(e.target.value) || 0 })} className="w-full border p-2 rounded text-black text-sm" dir="ltr" />
+              </div>
+              <div>
+                <label className="text-xs font-bold text-gray-600">خط الطول (Longitude)</label>
+                <input type="number" step="any" value={formData.storeLongitude} onChange={(e) => setFormData({ ...formData, storeLongitude: parseFloat(e.target.value) || 0 })} className="w-full border p-2 rounded text-black text-sm" dir="ltr" />
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-3 border-t border-purple-200">
+            <div>
+              <label className="block text-sm font-bold text-gray-700 mb-1">💵 السعر لكل كم ($)</label>
+              <input type="number" step="0.01" value={formData.pricePerKm} onChange={(e) => setFormData({ ...formData, pricePerKm: parseFloat(e.target.value) || 0 })} className="w-full border p-3 rounded text-black font-bold" dir="ltr" />
+              <p className="text-xs text-gray-500 mt-1">مثال: 0.50 = 50 سنت لكل كم</p>
+            </div>
+            <div>
+              <label className="block text-sm font-bold text-gray-700 mb-1">⬇️ الحد الأدنى (سنتات)</label>
+              <input type="number" value={formData.minDeliveryFee} onChange={(e) => setFormData({ ...formData, minDeliveryFee: parseInt(e.target.value) || 0 })} className="w-full border p-3 rounded text-black font-bold" dir="ltr" />
+              <p className="text-xs text-gray-500 mt-1">مثال: 100 = $1.00</p>
+            </div>
+            <div>
+              <label className="block text-sm font-bold text-gray-700 mb-1">⬆️ الحد الأقصى (سنتات)</label>
+              <input type="number" value={formData.maxDeliveryFee} onChange={(e) => setFormData({ ...formData, maxDeliveryFee: parseInt(e.target.value) || 0 })} className="w-full border p-3 rounded text-black font-bold" dir="ltr" />
+              <p className="text-xs text-gray-500 mt-1">مثال: 1000 = $10.00</p>
+            </div>
+          </div>
+
+          <div className="bg-white p-3 rounded-lg border border-purple-200 text-sm">
+            <p className="font-bold text-gray-700 mb-1">📊 مثال توضيحي:</p>
+            <p className="text-gray-600">
+              إذا كان السعر <b>${formData.pricePerKm}/كم</b>، والحد الأدنى <b>${(formData.minDeliveryFee / 100).toFixed(2)}</b>، والحد الأقصى <b>${(formData.maxDeliveryFee / 100).toFixed(2)}</b>:
+            </p>
+            <ul className="text-gray-600 text-xs mt-1 space-y-1 list-disc pr-5">
+              <li>مسافة 1 كم → ${(Math.max(formData.minDeliveryFee, Math.min(formData.maxDeliveryFee, Math.round(1 * formData.pricePerKm * 100))) / 100).toFixed(2)}</li>
+              <li>مسافة 5 كم → ${(Math.max(formData.minDeliveryFee, Math.min(formData.maxDeliveryFee, Math.round(5 * formData.pricePerKm * 100))) / 100).toFixed(2)}</li>
+              <li>مسافة 20 كم → ${(Math.max(formData.minDeliveryFee, Math.min(formData.maxDeliveryFee, Math.round(20 * formData.pricePerKm * 100))) / 100).toFixed(2)}</li>
+            </ul>
           </div>
         </div>
 

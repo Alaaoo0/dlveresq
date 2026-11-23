@@ -4,7 +4,10 @@ import { cookies } from 'next/headers';
 
 export async function POST(req: Request) {
   try {
-    const { customerName, phone, address, items, total, couponId, discountAmount, location, deliveryFee } = await req.json();
+    const { 
+      customerName, phone, address, items, total, 
+      couponId, discountAmount, location, deliveryFee, zoneId 
+    } = await req.json();
 
     if (!customerName || !phone || !address || !items || items.length === 0) {
       return NextResponse.json({ message: 'البيانات ناقصة' }, { status: 400 });
@@ -38,6 +41,7 @@ export async function POST(req: Request) {
           phone,
           address,
           location: location || null,
+          zoneId: zoneId || null,
           deliveryFee: deliveryFee || 200,
           total: Math.round(total),
           couponId: couponId || null,

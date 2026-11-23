@@ -1,88 +1,102 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { cookies } from 'next/headers';
 
 export async function POST(req: Request) {
   try {
-    const { 
-      customerName, phone, address, items, total, 
-      couponId, discountAmount, location, deliveryFee, zoneId 
-    } = await req.json();
+    const body = await req.json();
+    const {
+      customerName,
+      phone,
+      address,
+      location,
+      zoneId,
+      items,
+      total,
+      couponId,
+      discountAmount,
+      deliveryFee,
+      deliveryPaymentMethod = 'cash',
+    } = body;
 
     if (!customerName || !phone || !address || !items || items.length === 0) {
-      return NextResponse.json({ message: 'البيانات ناقصة' }, { status: 400 });
+      return NextResponse.json({ message: 'بيانات ناقصة' }, { status: 400 });
     }
 
-    const cookieStore = await cookies();
-    const userId = cookieStore.get('user_session')?.value || null;
-    const totalInDollars = total / 100;
+    // ✅ التحقق من الرصيد (المنتجات فقط، بدون التوصيل)
+    const user = await prisma.user.findFirst({
+      where: { email: (await req.headers.get('x-user-email')) || undefined },
+    });
 
-    if (userId) {
-      const user = await prisma.user.findUnique({ where: { id: userId } });
-      if (!user || user.walletBalance < totalInDollars) {
-        return NextResponse.json({ message: 'عذراً، رصيد محفظتك غير كافٍ' }, { status: 400 });
-      }
+    if (user && user.walletBalance < total / 100) {
+      return NextResponse.json({ message: 'رصيد المحفظة غير كافٍ' }, { status: 400 });
     }
 
-    const productIds = items.map((i: any) => i.id);
-    const dbProducts = await prisma.product.findMany({ where: { id: { in: productIds } } });
+    // ✅ إنشاء الطلب
+    const order = await prisma.order.create({
+      data: {
+        customerName,
+        phone,
+        address,
+        location: location || null,
+        zoneId: zoneId || null,
+        total: Math.round(total), // ✅ فقط سعر المنتجات
+        deliveryFee: deliveryFee || 0, // ✅ يُحفظ للعلم فقط
+        discountAmount: discountAmount || 0,
+        couponId: couponId || null,
+        items: {
+          create: items.map((item: any) => ({
+            productId: item.id,
+            quantity: item.quantity,
+            price: item.price,
+            variant: item.variant || null,
+          })),
+        },
+      },
+    });
 
-    for (const item of items) {
-      const dbProduct = dbProducts.find((p: any) => p.id === item.id);
-      if (!dbProduct || dbProduct.stock < item.quantity) {
-        return NextResponse.json({ message: `عذراً، الكمية المطلوبة من (${dbProduct?.name || 'منتج'}) غير متوفرة.` }, { status: 400 });
-      }
-    }
-
-    const order = await prisma.$transaction(async (tx) => {
-      const newOrder = await tx.order.create({
+    // ✅ خصم قيمة المنتجات فقط من المحفظة (بدون التوصيل)
+    if (user && total > 0) {
+      await prisma.user.update({
+        where: { id: user.id },
         data: {
-          customerName,
-          phone,
-          address,
-          location: location || null,
-          zoneId: zoneId || null,
-          deliveryFee: deliveryFee || 200,
-          total: Math.round(total),
-          couponId: couponId || null,
-          discountAmount: discountAmount || 0,
-          userId: userId,
-          status: 'pending',
-          items: {
-            create: items.map((item: any) => ({
-              productId: item.id,
-              quantity: item.quantity,
-              price: Math.round(item.price),
-              variant: item.variant || null,
-            })),
+          walletBalance: {
+            decrement: total / 100,
           },
         },
       });
 
-      for (const item of items) {
-        await tx.product.update({
-          where: { id: item.id },
-          data: { stock: { decrement: item.quantity } },
-        });
-      }
+      await prisma.walletTransaction.create({
+        data: {
+          userId: user.id,
+          amount: total / 100,
+          type: 'ORDER_PAYMENT',
+          status: 'COMPLETED',
+        },
+      });
+    }
 
-      if (couponId) {
-        await tx.coupon.update({ where: { id: couponId }, data: { usedCount: { increment: 1 } } });
-      }
+    return NextResponse.json({ orderId: order.id, message: 'تم إنشاء الطلب بنجاح' });
+  } catch (error) {
+    console.error('خطأ في إنشاء الطلب:', error);
+    return NextResponse.json({ message: 'فشل إنشاء الطلب' }, { status: 500 });
+  }
+}
 
-      if (userId) {
-        await tx.user.update({ where: { id: userId }, data: { walletBalance: { decrement: totalInDollars } } });
-        await tx.walletTransaction.create({
-          data: { userId, amount: totalInDollars, type: 'WITHDRAW', status: 'APPROVED' }
-        });
-      }
-
-      return newOrder;
+export async function GET() {
+  try {
+    const orders = await prisma.order.findMany({
+      orderBy: { createdAt: 'desc' },
+      include: {
+        items: {
+          include: { product: true },
+        },
+        user: {
+          select: { id: true, name: true, email: true },
+        },
+      },
     });
-
-    return NextResponse.json({ message: 'تم استلام الطلب', orderId: order.id }, { status: 201 });
-  } catch (error: any) {
-    console.error("❌ خطأ أثناء إنشاء الطلب:", error);
-    return NextResponse.json({ message: 'فشل في إنشاء الطلب', error: error.message }, { status: 500 });
+    return NextResponse.json(orders);
+  } catch (error) {
+    return NextResponse.json({ error: 'فشل قراءة الطلبات' }, { status: 500 });
   }
 }

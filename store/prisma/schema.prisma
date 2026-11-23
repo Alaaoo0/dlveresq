@@ -17,7 +17,7 @@ model Product {
   imageUrl    String?
   stock       Int         @default(10)
   category    String      @default("أجهزة الكترونية")
-  variants    String?     // 👈 هاد الحقل الجديد للخيارات
+  variants    String?
   createdAt   DateTime    @default(now())
   orderItems  OrderItem[]
   reviews     Review[]
@@ -46,7 +46,7 @@ model OrderItem {
   productId String
   quantity  Int
   price     Int
-  variant   String? // 👈 هاد الحقل عشان نحفظ الخيار بالطلب
+  variant   String?
   order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
   product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
 }
@@ -77,15 +77,25 @@ model Settings {
   whishNumber      String @default("0000000")
   email            String @default("info@aliboss.com")
   deliveryLocation String @default("بيروت، لبنان")
-  deliveryFee      Int    @default(200) // 👈 بالسنتات: 200 = $2.00، 0 = مجاني
+  deliveryFee      Int    @default(200)
 }
 
 model DeliveryZone {
   id        String   @id @default(cuid())
-  name      String
-  fee       Int      @default(0) // 👈 بالسنتات
+  name      String   @unique
+  fee       Int      @default(0)
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
+}
+
+model Employee {
+  id          String   @id @default(cuid())
+  name        String
+  phone       String
+  position    String
+  address     String?
+  isAvailable Boolean  @default(true)
+  createdAt   DateTime @default(now())
 }
 
 model PushSubscription {

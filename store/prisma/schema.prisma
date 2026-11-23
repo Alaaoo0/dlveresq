@@ -155,7 +155,6 @@ model DeliveryZone {
   fee       Int      @default(200)
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
-  orders    Order[]
 }
 
 // 🆕 جدول السائقين

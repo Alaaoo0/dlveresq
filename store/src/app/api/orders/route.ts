@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { createClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient } from '@/lib/supabase/server';
 
 export async function POST(req: Request) {
   try {
@@ -23,8 +23,8 @@ export async function POST(req: Request) {
       return NextResponse.json({ message: 'بيانات ناقصة' }, { status: 400 });
     }
 
-    // ✅ جلب المستخدم من Supabase session (نفس طريقة /api/auth/me)
-    const supabase = createClient();
+    // ✅ جلب المستخدم من Supabase session
+    const supabase = createServerSupabaseClient();
     const { data: { user: authUser } } = await supabase.auth.getUser();
 
     let userId: string | null = null;
@@ -55,8 +55,8 @@ export async function POST(req: Request) {
         address,
         location: location || null,
         zoneId: zoneId || null,
-        total: Math.round(total), // ✅ فقط سعر المنتجات
-        deliveryFee: deliveryFee || 0, // ✅ يُحفظ للعلم فقط
+        total: Math.round(total),
+        deliveryFee: deliveryFee || 0,
         discountAmount: discountAmount || 0,
         couponId: couponId || null,
         userId: userId,
@@ -71,7 +71,7 @@ export async function POST(req: Request) {
       },
     });
 
-    // ✅ خصم قيمة المنتجات فقط من المحفظة (بدون التوصيل)
+    // ✅ خصم قيمة المنتجات فقط من المحفظة
     if (userId && total > 0) {
       await prisma.user.update({
         where: { id: userId },

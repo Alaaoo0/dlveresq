@@ -68,19 +68,22 @@ export async function PATCH(
       );
     }
 
-    // التأكد أن الطلب مسند لهذا الموظف تحديداً
     const order = await prisma.order.findFirst({
       where: {
         id,
         employeeId: employee.id,
+        employeeResponse: "accepted",
       },
       select: { id: true },
     });
 
     if (!order) {
       return NextResponse.json(
-        { message: "الطلب غير موجود أو غير مسند إليك" },
-        { status: 404 }
+        {
+          message:
+            "لا يمكنك تحديث الطلب قبل قبولك له",
+        },
+        { status: 403 }
       );
     }
 

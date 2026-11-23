@@ -69,6 +69,8 @@ export async function assignEmployee(
    data: {
   employeeId: employee.id,
   assignedAt: new Date(),
+  employeeResponse: "pending",
+  employeeRespondedAt: null,
 },
   });
 

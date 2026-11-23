@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createServerClient } from '@supabase/ssr';
+import { cookies } from 'next/headers';
 
 export async function POST(req: Request) {
   try {
@@ -23,8 +24,19 @@ export async function POST(req: Request) {
       return NextResponse.json({ message: 'بيانات ناقصة' }, { status: 400 });
     }
 
-    // ✅ جلب المستخدم من Supabase session
-    const supabase = createServerSupabaseClient();
+    // ✅ إنشاء Supabase client من cookies مباشرة (الطريقة الصحيحة في Next.js 16)
+    const cookieStore = await cookies();
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          getAll: () => cookieStore.getAll(),
+          setAll: () => {},
+        },
+      }
+    );
+
     const { data: { user: authUser } } = await supabase.auth.getUser();
 
     let userId: string | null = null;
@@ -40,7 +52,7 @@ export async function POST(req: Request) {
       }
     }
 
-    // ✅ التحقق من الرصيد (المنتجات فقط، بدون التوصيل)
+    // ✅ التحقق من الرصيد (المنتجات فقط)
     if (userWalletBalance !== null && userWalletBalance < total / 100) {
       return NextResponse.json({ 
         message: `رصيد المحفظة غير كافٍ. المطلوب: $${(total / 100).toFixed(2)}. لديك: $${userWalletBalance.toFixed(2)}` 

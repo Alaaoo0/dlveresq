@@ -4,6 +4,24 @@ import { useState, useEffect } from "react";
 import { useCart } from "../context/CartContext";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import dynamic from "next/dynamic";
+
+const MapPicker = dynamic(() => import("@/components/MapPicker"), {
+  ssr: false,
+  loading: () => <div className="h-80 bg-gray-100 rounded-lg flex items-center justify-center">جاري تحميل الخريطة...</div>,
+});
+
+// حساب المسافة بين نقطتين (Haversine formula)
+function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = Math.sin(dLat / 2) ** 2 +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLon / 2) ** 2;
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
 
 export default function CheckoutPage() {
   const { cart = [], cartTotal = 0, clearCart } = useCart() || {};
@@ -12,8 +30,11 @@ export default function CheckoutPage() {
   const [address, setAddress] = useState("");
   const [zones, setZones] = useState<any[]>([]);
   const [selectedZone, setSelectedZone] = useState<any>(null);
-  const [deliveryFee, setDeliveryFee] = useState(0); // 👈 الافتراضي 0، والقيمة الحقيقية تجي من الإعدادات
+  const [deliveryFee, setDeliveryFee] = useState(0);
   const [location, setLocation] = useState("");
+  const [userLat, setUserLat] = useState<number | null>(null);
+  const [userLng, setUserLng] = useState<number | null>(null);
+  const [distance, setDistance] = useState<number>(0);
   const [locationStatus, setLocationStatus] = useState<"idle" | "success" | "denied" | "loading">("idle");
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -30,6 +51,13 @@ export default function CheckoutPage() {
   const [modalMessage, setModalMessage] = useState("");
   const [modalType, setModalType] = useState<"error" | "success">("error");
 
+  // إعدادات التوصيل الذكي
+  const [storeLat, setStoreLat] = useState(33.8938);
+  const [storeLng, setStoreLng] = useState(35.5018);
+  const [pricePerKm, setPricePerKm] = useState(0.5);
+  const [minFee, setMinFee] = useState(100);
+  const [maxFee, setMaxFee] = useState(1000);
+
   const router = useRouter();
 
   const totalShipping = deliveryFee;
@@ -41,6 +69,22 @@ export default function CheckoutPage() {
     setModalOpen(true);
   };
 
+  // حساب سعر التوصيل بناءً على المسافة
+  const recalculateDeliveryFee = (lat: number, lng: number) => {
+    const dist = calculateDistance(storeLat, storeLng, lat, lng);
+    setDistance(dist);
+    let fee = Math.round(dist * pricePerKm * 100); // بالسنتات
+    fee = Math.max(minFee, Math.min(maxFee, fee)); // تطبيق الحدود
+    setDeliveryFee(fee);
+  };
+
+  const handleLocationSelect = (lat: number, lng: number) => {
+    setUserLat(lat);
+    setUserLng(lng);
+    setLocation(`${lat},${lng}`);
+    recalculateDeliveryFee(lat, lng);
+  };
+
   const autoDetectLocation = () => {
     if (!navigator.geolocation) {
       setLocationStatus("denied");
@@ -50,7 +94,7 @@ export default function CheckoutPage() {
     navigator.geolocation.getCurrentPosition(
       (position) => {
         const { latitude, longitude } = position.coords;
-        setLocation(`${latitude},${longitude}`);
+        handleLocationSelect(latitude, longitude);
         setLocationStatus("success");
       },
       () => {
@@ -78,7 +122,6 @@ export default function CheckoutPage() {
         router.push("/login");
       });
 
-    // جلب المناطق
     fetch("/api/delivery-zones", { cache: "no-store" })
       .then((res) => res.json())
       .then((data) => {
@@ -88,23 +131,22 @@ export default function CheckoutPage() {
       })
       .catch(() => {});
 
-    // ✅ جلب واتساب + مبلغ التوصيل من الإعدادات (بالسنتات، ويدعم 0)
+    // جلب الإعدادات + إعدادات التوصيل الذكي
     fetch("/api/settings", { cache: "no-store" })
       .then((res) => res.json())
       .then((data) => {
         if (data.whatsapp) setStoreWhatsapp(data.whatsapp);
-        if (data.deliveryFee !== undefined && data.deliveryFee !== null) {
-          setDeliveryFee(parseInt(data.deliveryFee, 10) || 0);
-        }
+        if (data.storeLatitude) setStoreLat(parseFloat(data.storeLatitude));
+        if (data.storeLongitude) setStoreLng(parseFloat(data.storeLongitude));
+        if (data.pricePerKm !== undefined) setPricePerKm(parseFloat(data.pricePerKm));
+        if (data.minDeliveryFee !== undefined) setMinFee(parseInt(data.minDeliveryFee));
+        if (data.maxDeliveryFee !== undefined) setMaxFee(parseInt(data.maxDeliveryFee));
       })
       .catch(() => {});
-
-    autoDetectLocation();
   }, [router]);
 
   const handleZoneSelect = (zone: any) => {
     setSelectedZone(zone);
-    // 👈 السعر جاي من الإعدادات، مش من المنطقة
   };
 
   const handleApplyCoupon = async () => {
@@ -134,6 +176,7 @@ export default function CheckoutPage() {
     if (!cart || cart.length === 0) return showModal("السلة فاضية!");
     if (!name || !phone || !address) return showModal("عبّي كل الحقول من فضلك");
     if (!selectedZone) return showModal("يرجى اختيار منطقة التوصيل");
+    if (userLat === null || userLng === null) return showModal("يرجى تحديد موقعك على الخريطة");
     if (userBalance !== null && userBalance < finalTotal / 100) {
       return showModal(
         `عذراً، رصيد محفظتك غير كافٍ. المطلوب: $${(finalTotal / 100).toFixed(2)}. لديك: $${userBalance.toFixed(2)}`
@@ -142,8 +185,8 @@ export default function CheckoutPage() {
 
     setLoading(true);
 
-    const mapsLink = location ? `https://www.google.com/maps?q=${location}` : "";
-    const fullAddress = location ? `${address} | 📍 ${mapsLink}` : address;
+    const mapsLink = `https://www.google.com/maps?q=${userLat},${userLng}`;
+    const fullAddress = `${address} | 📍 ${mapsLink}`;
 
     try {
       const res = await fetch("/api/orders", {
@@ -153,7 +196,7 @@ export default function CheckoutPage() {
           customerName: name,
           phone,
           address: fullAddress,
-          location: location,
+          location: `${userLat},${userLng}`,
           zoneId: selectedZone.id,
           items: cart,
           total: finalTotal,
@@ -169,17 +212,17 @@ export default function CheckoutPage() {
         setSuccess(true);
         setOrderId(data.orderId);
 
-        let msg = `🛒 *طلب جديد*\n\n👤 الاسم: ${name}\n📱 الهاتف: ${phone}\n📍 العنوان: ${address}\n🗺️ المنطقة: ${selectedZone.name}`;
-        if (mapsLink) {
-          msg += `\n\n📍 *موقع الزبون (GPS):*\n${mapsLink}`;
-        }
+        let msg = `🛒 *طلب جديد*\n\n👤 الاسم: ${name}\n📱 الهاتف: ${phone}\n📍 العنوان: ${address}`;
+        msg += `\n\n📍 *موقع الزبون (GPS):*\n${mapsLink}`;
+        msg += `\n📏 *المسافة:* ${distance.toFixed(2)} كم`;
+        msg += `\n🗺️ المنطقة: ${selectedZone.name}`;
         msg += `\n\n📦 *المنتجات:*\n`;
         cart.forEach((item: any) => {
           msg += `- ${item.name} × ${item.quantity} = $${((item.price * item.quantity) / 100).toFixed(2)}\n`;
         });
         if (appliedCoupon)
           msg += `\n🎟️ الخصم (${appliedCoupon.code}): -$${(appliedCoupon.discountAmount / 100).toFixed(2)}`;
-        msg += `\n🚚 *مبلغ التوصيل (${selectedZone.name}):* $${(deliveryFee / 100).toFixed(2)}`;
+        msg += `\n🚚 *مبلغ التوصيل:* $${(deliveryFee / 100).toFixed(2)} (مسافة ${distance.toFixed(2)} كم)`;
         msg += `\n💰 *المجموع النهائي:* $${(finalTotal / 100).toFixed(2)}\n💳 *تم الدفع من المحفظة*`;
 
         const encodedMsg = encodeURIComponent(msg);
@@ -314,6 +357,48 @@ export default function CheckoutPage() {
                 <textarea value={address} onChange={(e) => setAddress(e.target.value)} rows={3} className="w-full border border-gray-300 rounded-lg p-3 text-black focus:ring-2 focus:ring-red-500 outline-none" placeholder="المدينة، الشارع، علامة مميزة..." required></textarea>
               </div>
 
+              {/* 🗺️ خريطة تحديد الموقع */}
+              <div className="border-2 border-blue-200 p-4 rounded-xl bg-blue-50">
+                <label className="block text-sm font-bold text-gray-700 mb-2">📍 حدد موقعك على الخريطة</label>
+                <p className="text-xs text-gray-600 mb-3">اضغط على الخريطة لتحديد موقعك، أو استخدم زر GPS. سيتم حساب سعر التوصيل تلقائياً.</p>
+
+                <MapPicker
+                  centerLat={storeLat}
+                  centerLng={storeLng}
+                  onLocationSelect={handleLocationSelect}
+                  height="h-72"
+                  showStoreMarker={true}
+                  userLat={userLat}
+                  userLng={userLng}
+                />
+
+                <div className="flex gap-2 mt-3">
+                  <button type="button" onClick={autoDetectLocation} className="flex-1 bg-blue-600 text-white py-2 rounded-lg font-bold hover:bg-blue-700 text-sm">
+                    {locationStatus === "loading" ? "⏳ جاري التحديد..." : "📡 استخدم موقعي الحالي"}
+                  </button>
+                </div>
+
+                {userLat !== null && userLng !== null && (
+                  <div className="mt-3 bg-white p-3 rounded-lg border border-blue-200">
+                    <div className="flex justify-between items-center mb-1">
+                      <span className="text-sm font-bold text-gray-700">📏 المسافة من المتجر:</span>
+                      <span className="font-black text-blue-700">{distance.toFixed(2)} كم</span>
+                    </div>
+                    <div className="flex justify-between items-center pt-2 border-t border-blue-100">
+                      <span className="text-sm font-bold text-gray-700">🚚 مبلغ التوصيل:</span>
+                      <span className="font-black text-red-600 text-lg">${(deliveryFee / 100).toFixed(2)}</span>
+                    </div>
+                    <p className="text-xs text-gray-500 mt-1">
+                      (السعر: ${pricePerKm}/كم | الحد الأدنى: ${(minFee / 100).toFixed(2)} | الحد الأقصى: ${(maxFee / 100).toFixed(2)})
+                    </p>
+                  </div>
+                )}
+
+                {locationStatus === "denied" && (
+                  <p className="text-xs text-red-600 mt-2">⚠️ تم رفض الوصول للموقع. يمكنك الضغط يدوياً على الخريطة.</p>
+                )}
+              </div>
+
               {/* 🗺️ اختيار منطقة التوصيل */}
               <div className="bg-purple-50 border border-purple-200 p-4 rounded-xl">
                 <label className="block text-sm font-bold text-gray-700 mb-3">🗺️ اختر منطقة التوصيل</label>
@@ -333,46 +418,15 @@ export default function CheckoutPage() {
                         }`}
                       >
                         <div className="font-bold text-gray-800 text-sm">{zone.name}</div>
-                        <div className="text-purple-600 font-black text-lg">${(deliveryFee / 100).toFixed(2)}</div>
                       </button>
                     ))}
                   </div>
                 )}
                 {selectedZone && (
                   <p className="text-sm text-purple-700 font-bold mt-3 bg-purple-100 p-2 rounded">
-                    ✅ تم اختيار: {selectedZone.name} - التوصيل: ${(deliveryFee / 100).toFixed(2)}
+                    ✅ تم اختيار: {selectedZone.name}
                   </p>
                 )}
-              </div>
-
-              {/* 📍 الموقع التلقائي */}
-              <div className="bg-blue-50 border border-blue-200 p-4 rounded-xl">
-                <label className="block text-sm font-bold text-gray-700 mb-2">📍 موقعك (تلقائي)</label>
-                {locationStatus === "loading" && (
-                  <p className="text-blue-700 font-bold">⏳ جاري تحديد موقعك...</p>
-                )}
-                {locationStatus === "success" && (
-                  <div>
-                    <p className="text-green-700 font-bold">✅ تم تحديد موقعك تلقائياً!</p>
-                    <p className="text-xs text-gray-600 mt-1 break-all" dir="ltr">
-                      🗺️ https://www.google.com/maps?q={location}
-                    </p>
-                    <button type="button" onClick={autoDetectLocation} className="text-xs text-blue-600 underline mt-2">
-                      إعادة تحديد الموقع
-                    </button>
-                  </div>
-                )}
-                {locationStatus === "denied" && (
-                  <div>
-                    <p className="text-red-700 font-bold">⚠️ ما سمحت بالوصول للموقع</p>
-                    <button type="button" onClick={autoDetectLocation} className="mt-2 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-blue-700">
-                      📍 السماح وتحديد الموقع
-                    </button>
-                  </div>
-                )}
-                <p className="text-xs text-gray-500 mt-2">
-                  الموقع يُرسل تلقائياً مع طلبك على واتساب لنعرف وين نوصلك.
-                </p>
               </div>
 
               <button type="submit" disabled={loading || userBalance < finalTotal / 100} className="w-full bg-red-600 text-white font-bold text-lg py-4 rounded-xl mt-4 hover:bg-red-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed">
@@ -410,7 +464,7 @@ export default function CheckoutPage() {
                 {appliedCoupon && <div className="flex justify-between text-green-600 font-bold"><span>الخصم</span><span>-${(appliedCoupon.discountAmount / 100).toFixed(2)}</span></div>}
                 <div className="flex justify-between text-gray-800 font-semibold">
                   <span>🚚 التوصيل</span>
-                  <span>{selectedZone ? `${selectedZone.name} - ` : ''}${(deliveryFee / 100).toFixed(2)}</span>
+                  <span>{userLat !== null ? `${distance.toFixed(2)} كم - ` : ''}${(deliveryFee / 100).toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between font-black text-xl text-red-600 mt-4 pt-4 border-t"><span>الإجمالي:</span><span>${(finalTotal / 100).toFixed(2)}</span></div>
               </div>

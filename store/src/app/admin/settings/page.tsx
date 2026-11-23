@@ -16,7 +16,7 @@ export default function SettingsPage() {
     whishNumber: "",
     email: "",
     deliveryLocation: "بيروت، لبنان",
-    deliveryFee: 200,
+    deliveryFee: 0,
   });
 
   const [loading, setLoading] = useState(true);
@@ -37,10 +37,10 @@ export default function SettingsPage() {
           whishNumber: data.whishNumber || "",
           email: data.email || "",
           deliveryLocation: data.deliveryLocation || "بيروت، لبنان",
-          // ✅ إصلاح: السماح بقيمة 0
-          deliveryFee: data.deliveryFee !== undefined && data.deliveryFee !== null 
-            ? parseInt(data.deliveryFee) 
-            : 200,
+          // ✅ إصلاح: قيمة 0 تُقبل كما هي (سنتات)
+          deliveryFee: data.deliveryFee !== undefined && data.deliveryFee !== null
+            ? parseInt(data.deliveryFee, 10) || 0
+            : 0,
         });
         setLoading(false);
       })
@@ -53,7 +53,11 @@ export default function SettingsPage() {
     await fetch("/api/settings", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(formData),
+      // ✅ تحويل الكسور لعدد صحيح سنتات (0.1 → 0، 10 → 10، 200 → 200)
+      body: JSON.stringify({
+        ...formData,
+        deliveryFee: Math.round(parseFloat(formData.deliveryFee as any) || 0),
+      }),
     });
     setSaving(false);
     alert("تم حفظ الإعدادات بنجاح!");
@@ -137,20 +141,20 @@ export default function SettingsPage() {
             />
           </div>
           <div>
-            <label className="block text-sm font-bold text-gray-700 mb-1">💰 مبلغ التوصيل (بالسنتات - مثال: 200 = $2.00، 0 = مجاني)</label>
+            <label className="block text-sm font-bold text-gray-700 mb-1">💰 مبلغ التوصيل (بالسنتات — مثال: 200 = $2.00، 10 = $0.10، 0 = مجاني)</label>
             <input
               type="number"
               value={formData.deliveryFee}
-              onChange={(e) => setFormData({ ...formData, deliveryFee: e.target.value === '' ? 0 : parseInt(e.target.value) || 0 })}
+              onChange={(e) => setFormData({ ...formData, deliveryFee: e.target.value === '' ? 0 : Math.max(0, Math.round(parseFloat(e.target.value) || 0)) })}
               className="w-full border p-3 rounded text-black text-lg font-bold"
               min="0"
-              step="50"
+              step="any"
               dir="ltr"
               required
             />
             <p className="text-xs text-gray-500 mt-2">
-              المبلغ الحالي: <span className="font-bold text-red-600">${(formData.deliveryFee / 100).toFixed(2)}</span>
-              — اكتب 0 لجعل التوصيل مجاني.
+              المبلغ الحالي: <span className="font-bold text-red-600">${((Number(formData.deliveryFee) || 0) / 100).toFixed(2)}</span>
+              {' '}— اكتب 0 لجعل التوصيل مجاني.
             </p>
           </div>
         </div>

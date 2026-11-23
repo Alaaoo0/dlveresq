@@ -41,6 +41,8 @@ model Order {
   userId            String?
   user              User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
   items             OrderItem[]
+employeeId        String?
+employee          Employee?   @relation(fields: [employeeId], references: [id], onDelete: SetNull)
 }
 
 model OrderItem {

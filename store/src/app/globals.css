@@ -14,23 +14,14 @@
     --text-muted: #64748B;
     --success: #10B981;
     --danger: #EF4444;
-    
     --radius: 1rem;
-    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
-    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1);
   }
 
   body {
-    font-family: 'Tajawal', sans-serif; /* رح نضيف الخط من layout */
+    font-family: 'Tajawal', sans-serif;
     background-color: var(--background);
     color: var(--text-main);
     -webkit-font-smoothing: antialiased;
-    overflow-x: hidden;
-  }
-
-  button, input, select, textarea {
-    font-family: 'Tajawal', sans-serif;
   }
 }
 
@@ -39,19 +30,13 @@
     @apply bg-[#2563EB] text-white font-bold py-3 px-6 rounded-[1rem] 
            hover:bg-[#1D4ED8] transition-all duration-300 active:scale-95 shadow-md;
   }
-
-  .btn-accent {
-    @apply bg-[#FBBF24] text-gray-900 font-black py-3 px-6 rounded-[1rem] 
-           hover:bg-[#F59E0B] transition-all duration-300 active:scale-95 shadow-md;
-  }
-
+  
   .card-modern {
-    @apply bg-[#FFFFFF] rounded-[1rem] p-6 shadow-[0_4px_6px_-1px_rgb(0_0_0_/_0.1)] 
-           border border-gray-100 transition-transform duration-300 hover:shadow-[0_10px_15px_-3px_rgb(0_0_0_/_0.1)];
+    @apply bg-white rounded-[1rem] p-6 shadow-md border border-gray-100;
   }
-
+  
   .input-modern {
-    @apply w-full bg-white border border-gray-200 rounded-[1rem] p-4 text-gray-900 
-           focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/20 outline-none transition-all;
+    @apply w-full bg-white border border-gray-200 rounded-[1rem] p-4 
+           focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/20 outline-none;
   }
 }

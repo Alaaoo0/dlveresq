@@ -6,7 +6,7 @@ export async function GET() {
   try {
     const employees = await prisma.employee.findMany({ 
       orderBy: { createdAt: 'desc' },
-      select: { id: true, name: true, phone: true, position: true, isAvailable: true } // نجلب فقط الحقول المطلوبة
+      select: { id: true, name: true, phone: true, position: true, isAvailable: true }
     });
     return NextResponse.json(employees);
   } catch (error) {

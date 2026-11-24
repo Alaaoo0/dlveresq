@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 
-// تحميل الخريطة بشكل ديناميكي لتحسين الأداء
+// تحميل الخريطة بشكل ديناميكي لتحسين الأداء ومنع أخطاء SSR
 const MapComponent = dynamic(() => import("@/components/MapPicker"), { 
   ssr: false,
   loading: () => <div className="absolute inset-0 bg-gray-100 animate-pulse" /> 
@@ -27,7 +27,7 @@ export default function LoginPage() {
     e.preventDefault();
     setLoading(true);
     
-    // هنا بنربط مع الـ API تبعك لاحقاً
+    // محاكاة تسجيل الدخول (لاحقاً نربطها بالـ API الفعلي)
     setTimeout(() => {
       setLoading(false);
       router.push("/"); 
@@ -44,6 +44,7 @@ export default function LoginPage() {
           centerLng={35.5018} 
           height="h-full" 
           showStoreMarker={false}
+          onLocationSelect={() => {}} // ✅ التصحيح: إضافة دالة فارغة لتجنب خطأ الـ Build
         />
         {/* طبقة تدرج لوني عشان النص يكون واضح فوق الخريطة */}
         <div className="absolute inset-0 bg-gradient-to-t from-white via-white/80 to-transparent" />

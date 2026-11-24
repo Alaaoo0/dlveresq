@@ -13,9 +13,10 @@ export default function AdminLoginPage() {
   useEffect(() => {
     const isAdminLoggedIn = document.cookie.includes('admin_session=true');
     if (isAdminLoggedIn) {
-      router.push("/admin");
+      // إذا كان مسجل دخول، نحوله فوراً للوحة التحكم
+      window.location.href = "/admin";
     }
-  }, [router]);
+  }, []);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,8 +29,9 @@ export default function AdminLoginPage() {
     if (password === ADMIN_PASSWORD) {
       // حفظ الجلسة لمدة 30 يوم
       document.cookie = `admin_session=true; path=/; max-age=${60 * 60 * 24 * 30}; SameSite=Strict`;
-      router.push("/admin");
-      router.refresh();
+      
+      // ✅ إعادة تحميل كاملة للصفحة للدخول للإدارة دغري
+      window.location.href = "/admin"; 
     } else {
       setError("كلمة المرور غير صحيحة!");
       setLoading(false);

@@ -2,132 +2,100 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import dynamic from "next/dynamic";
 
-// تحميل الخريطة بشكل ديناميكي لتحسين الأداء ومنع أخطاء SSR
-const MapComponent = dynamic(() => import("@/components/MapPicker"), { 
-  ssr: false,
-  loading: () => <div className="absolute inset-0 bg-gray-100 animate-pulse" /> 
-});
-
-export default function LoginPage() {
-  const [phone, setPhone] = useState("");
-  const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [locationStatus, setLocationStatus] = useState<"idle" | "locating" | "found">("idle");
+export default function WelcomePage() {
   const router = useRouter();
+  const [mounted, setMounted] = useState(false);
 
-  // محاكاة تحديد الموقع عند فتح الصفحة لإعطاء شعور احترافي
   useEffect(() => {
-    setLocationStatus("locating");
-    setTimeout(() => setLocationStatus("found"), 1500);
+    setMounted(true);
   }, []);
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    
-    // محاكاة تسجيل الدخول (لاحقاً نربطها بالـ API الفعلي)
-    setTimeout(() => {
-      setLoading(false);
-      router.push("/"); 
-    }, 1500);
-  };
+  if (!mounted) return null;
 
   return (
-    <div className="relative h-screen w-full overflow-hidden bg-gray-50" dir="rtl">
+    <div className="min-h-screen bg-[var(--background)] flex flex-col relative overflow-hidden" dir="rtl">
       
-      {/* 1. خلفية الخريطة التفاعلية */}
-      <div className="absolute inset-0 z-0 opacity-90">
-        <MapComponent 
-          centerLat={33.8938} 
-          centerLng={35.5018} 
-          height="h-full" 
-          showStoreMarker={false}
-          onLocationSelect={() => {}} // ✅ التصحيح: إضافة دالة فارغة لتجنب خطأ الـ Build
-        />
-        {/* طبقة تدرج لوني عشان النص يكون واضح فوق الخريطة */}
-        <div className="absolute inset-0 bg-gradient-to-t from-white via-white/80 to-transparent" />
+      {/* 1. خلفية متحركة حيوية (نمط نقاط + أيقونات عائمة) */}
+      <div className="absolute inset-0 z-0 opacity-10 pointer-events-none">
+        {/* نمط النقاط */}
+        <div className="absolute inset-0" style={{ 
+          backgroundImage: 'radial-gradient(#2563EB 1px, transparent 1px)', 
+          backgroundSize: '24px 24px' 
+        }} />
+        
+        {/* أيقونات التوصيل العائمة والمتحركة */}
+        <div className="absolute top-20 right-10 text-6xl animate-bounce-slow opacity-50 rotate-12">🛵</div>
+        <div className="absolute bottom-40 left-10 text-5xl animate-pulse opacity-40 -rotate-12">🚗</div>
+        <div className="absolute top-1/2 right-1/4 text-4xl animate-bounce opacity-30">📦</div>
+        <div className="absolute bottom-20 right-1/3 text-6xl animate-spin-slow opacity-20">🍔</div>
       </div>
 
       {/* 2. المحتوى الرئيسي */}
-      <div className="relative z-10 flex flex-col justify-end h-full pb-12 px-6 max-w-md mx-auto">
+      <div className="relative z-10 flex flex-col justify-between h-full p-8 pt-20">
         
-        {/* رسالة ترحيبية متحركة */}
-        <div className="mb-8 text-center space-y-2 animate-fade-in-up">
-          <div className="inline-block p-3 bg-[var(--primary)] rounded-2xl shadow-lg mb-2 transform -rotate-6">
-            <span className="text-3xl">🛵</span>
+        {/* اللوجو والترحيب */}
+        <div className="text-center space-y-6 animate-fade-in-up">
+          <div className="inline-flex items-center justify-center w-32 h-32 bg-white rounded-[2.5rem] shadow-2xl mb-6 transform hover:scale-105 transition-transform duration-500 border-4 border-[var(--primary)]/10">
+            <span className="text-7xl filter drop-shadow-lg">🛵</span>
           </div>
-          <h1 className="text-3xl font-black text-[var(--text-main)]">أهلاً بك في توصيل سريع</h1>
-          <p className="text-[var(--text-muted)] font-medium">سجل دخولك لتتبع طلباتك لحظة بلحظة</p>
+          
+          <h1 className="text-4xl md:text-5xl font-black text-[var(--text-main)] leading-tight">
+            توصيل سريع<br/>
+            <span className="text-[var(--primary)]">لباب بيتك!</span>
+          </h1>
+          
+          <p className="text-[var(--text-muted)] text-lg max-w-xs mx-auto leading-relaxed">
+            أسرع خدمة توصيل في المدينة. مطاعم، سوبرماركت، وكل شي بدك ياه.
+          </p>
         </div>
 
-        {/* بطاقة تسجيل الدخول العائمة */}
-        <form onSubmit={handleLogin} className="card-modern space-y-4 backdrop-blur-sm bg-white/95 border-none shadow-[var(--shadow-lg)]">
-          
-          <div className="space-y-1">
-            <label className="text-sm font-bold text-[var(--text-muted)] mr-1">رقم الهاتف</label>
-            <input 
-              type="tel" 
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              placeholder="70 123 456"
-              dir="ltr"
-              className="input-modern text-left font-mono tracking-wide"
-              required
-            />
-          </div>
-
-          <div className="space-y-1">
-            <label className="text-sm font-bold text-[var(--text-muted)] mr-1">كلمة المرور</label>
-            <input 
-              type="password" 
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
-              className="input-modern"
-              required
-            />
-          </div>
-
+        {/* الأزرار السفلية */}
+        <div className="space-y-4 w-full max-w-sm mx-auto pb-8">
           <button 
-            type="submit" 
-            disabled={loading}
-            className="btn-primary w-full mt-2 flex items-center justify-center gap-2 text-lg py-4"
+            onClick={() => router.push("/")}
+            className="btn-primary w-full py-5 text-xl shadow-xl shadow-blue-500/20 flex items-center justify-center gap-3 group"
           >
-            {loading ? (
-              <span className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-            ) : (
-              <>
-                <span>دخول آمن</span>
-                <span>←</span>
-              </>
-            )}
+            <span>ابدأ الطلب الآن</span>
+            <span className="group-hover:-translate-x-2 transition-transform">←</span>
           </button>
 
-          <div className="text-center pt-2">
-            <p className="text-xs text-[var(--text-muted)]">
-              ليس لديك حساب؟ <button type="button" onClick={() => router.push("/register")} className="text-[var(--primary)] font-bold hover:underline">أنشئ حساب جديد</button>
-            </p>
-          </div>
-        </form>
-
-        {/* مؤشر حالة الموقع */}
-        <div className="mt-6 flex items-center justify-center gap-2 text-xs font-bold text-[var(--text-muted)] bg-white/80 py-2 px-4 rounded-full w-fit mx-auto backdrop-blur-md shadow-sm">
-          {locationStatus === "locating" ? (
-            <>
-              <span className="w-2 h-2 bg-yellow-400 rounded-full animate-ping" />
-              جاري تحديد موقعك...
-            </>
-          ) : locationStatus === "found" ? (
-            <>
-              <span className="w-2 h-2 bg-[var(--success)] rounded-full" />
-              تم تحديد موقعك بدقة ✅
-            </>
-          ) : null}
+          <button 
+            onClick={() => router.push("/employee/login")}
+            className="w-full py-4 bg-white border-2 border-gray-200 text-[var(--text-muted)] font-bold rounded-[1rem] hover:border-[var(--primary)] hover:text-[var(--primary)] transition-all flex items-center justify-center gap-2"
+          >
+            <span>🏍️</span>
+            <span>بوابة السائقين</span>
+          </button>
+          
+          <p className="text-center text-xs text-gray-400 mt-4">
+            بالتسجيل أنت توافق على شروط الاستخدام وسياسة الخصوصية
+          </p>
         </div>
 
       </div>
+
+      {/* تعريف الأنيميشن المخصصة */}
+      <style jsx global>{`
+        @keyframes bounce-slow {
+          0%, 100% { transform: translateY(0) rotate(12deg); }
+          50% { transform: translateY(-20px) rotate(12deg); }
+        }
+        @keyframes spin-slow {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+        .animate-bounce-slow { animation: bounce-slow 3s infinite ease-in-out; }
+        .animate-spin-slow { animation: spin-slow 10s linear infinite; }
+        .animate-fade-in-up {
+          animation: fadeInUp 0.8s ease-out forwards;
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        @keyframes fadeInUp {
+          to { opacity: 1; transform: translateY(0); }
+        }
+      `}</style>
     </div>
   );
 }

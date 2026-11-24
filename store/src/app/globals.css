@@ -2,12 +2,8 @@
 @tailwind components;
 @tailwind utilities;
 
-/* استيراد خط Tajawal العصري */
-@import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800&display=swap');
-
 @layer base {
   :root {
-    /* ألوان النظام الجديد */
     --primary: #2563EB;
     --primary-dark: #1D4ED8;
     --accent: #FBBF24;
@@ -26,7 +22,7 @@
   }
 
   body {
-    font-family: 'Tajawal', sans-serif;
+    font-family: 'Tajawal', sans-serif; /* رح نضيف الخط من layout */
     background-color: var(--background);
     color: var(--text-main);
     -webkit-font-smoothing: antialiased;
@@ -54,7 +50,6 @@
            border border-gray-100 transition-transform duration-300 hover:shadow-[0_10px_15px_-3px_rgb(0_0_0_/_0.1)];
   }
 
-  /* ✅ التصحيح هنا: استخدام لون Hex مباشر بدل المتغير مع الشفافية */
   .input-modern {
     @apply w-full bg-white border border-gray-200 rounded-[1rem] p-4 text-gray-900 
            focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/20 outline-none transition-all;

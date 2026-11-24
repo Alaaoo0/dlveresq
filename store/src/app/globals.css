@@ -2,52 +2,63 @@
 @tailwind components;
 @tailwind utilities;
 
-@keyframes fadeInUp {
-  from {
-      opacity: 0;
-          transform: translateY(20px);
-            }
-              to {
-                  opacity: 1;
-                      transform: translateY(0);
-                        }
-                        }
+/* استيراد خط Tajawal العصري */
+@import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800&display=swap');
 
-                        .animate-fade-in-up {
-                          animation: fadeInUp 0.4s ease-out forwards;
-                          }
+@layer base {
+  :root {
+    /* ألوان النظام الجديد - مستوحاة من تطبيقات التوصيل الحديثة */
+    --primary: #2563EB;       /* أزرق كهربائي */
+    --primary-dark: #1D4ED8;
+    --accent: #FBBF24;        /* أصفر ذهبي للأزرار المهمة */
+    --accent-hover: #F59E0B;
+    --background: #F8FAFC;    /* خلفية رمادية فاتحة جداً ونظيفة */
+    --surface: #FFFFFF;       /* لون البطاقات والأوراق */
+    --text-main: #0F172A;     /* نص أسود داكن للقراءة المريحة */
+    --text-muted: #64748B;    /* نص رمادي للتفاصيل */
+    --success: #10B981;       /* أخضر للنجاح */
+    --danger: #EF4444;        /* أحمر للتحذير */
+    
+    /* إعدادات الخطوط والحواف */
+    --radius: 1rem;           /* حواف دائرية ناعمة */
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+  }
 
-                          :root {
-                            --background: #ffffff;
-                              --foreground: #171717;
-                              }
+  body {
+    font-family: 'Tajawal', sans-serif;
+    background-color: var(--background);
+    color: var(--text-main);
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
 
-                              @media (prefers-color-scheme: dark) {
-                                :root {
-                                    --background: #0a0a0a;
-                                        --foreground: #ededed;
-                                          }
-                                          }
-
-                                          body {
-                                            background: var(--background);
-                                              color: var(--foreground);
-                                                font-family: Arial, Helvetica, sans-serif;
-                                                }
-/* 👇 عشان نمنع التمرير الأفقي ونخلي الموقع متجاوب مع كل الشاشات */
-html, body {
-  max-width: 100vw;
-  overflow-x: hidden;
-  margin: 0;
-  padding: 0;
+  /* تحسين شكل الأزرار والمدخلات بشكل عام */
+  button, input, select, textarea {
+    font-family: 'Tajawal', sans-serif;
+  }
 }
 
-@keyframes loading-bar {
-  0% { width: 0%; }
-  50% { width: 100%; }
-  100% { width: 0%; }
-}
+@layer components {
+  /* كلاسات جاهزة للاستخدام في كل التطبيق */
+  .btn-primary {
+    @apply bg-[var(--primary)] text-white font-bold py-3 px-6 rounded-[var(--radius)] 
+           hover:bg-[var(--primary-dark)] transition-all duration-300 active:scale-95 shadow-md;
+  }
 
-.animate-loading-bar {
-  animation: loading-bar 2.5s ease-in-out infinite;
+  .btn-accent {
+    @apply bg-[var(--accent)] text-gray-900 font-black py-3 px-6 rounded-[var(--radius)] 
+           hover:bg-[var(--accent-hover)] transition-all duration-300 active:scale-95 shadow-md;
+  }
+
+  .card-modern {
+    @apply bg-[var(--surface)] rounded-[var(--radius)] p-6 shadow-[var(--shadow-md)] 
+           border border-gray-100 transition-transform duration-300 hover:shadow-[var(--shadow-lg)];
+  }
+
+  .input-modern {
+    @apply w-full bg-white border border-gray-200 rounded-[var(--radius)] p-4 text-gray-900 
+           focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/20 outline-none transition-all;
+  }
 }

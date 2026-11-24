@@ -1,174 +1,153 @@
 "use client";
+
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 
-export default function EmployeeDashboard() {
+export default function DriverDashboard() {
+  const [isOnline, setIsOnline] = useState(false);
   const [orders, setOrders] = useState<any[]>([]);
-  const [isAvailable, setIsAvailable] = useState(false);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
-  // دالة لجلب بيانات السائق والطلبات عند فتح الصفحة
+  // محاكاة جلب الطلبات عند فتح الصفحة
   useEffect(() => {
-    const checkAuth = async () => {
-      // قراءة كوكيز الجلسة
-      const empId = document.cookie.split('; ').find(row => row.startsWith('emp_session='))?.split('=')[1];
-      
-      if (!empId) { 
-        router.push('/employee/login'); 
-        return; 
-      }
-      
-      try {
-        // جلب حالة التوفر والطلبات المسندة لهذا السائق
-        const [empRes, ordersRes] = await Promise.all([
-          fetch(`/api/employees?id=${empId}`).then(r => r.json()),
-          fetch(`/api/employee/my-orders?empId=${empId}`).then(r => r.json())
-        ]);
-        
-        if (empRes.length > 0) {
-          setIsAvailable(empRes[0].isAvailable);
-          // تصفية الطلبات التي لم يتم تسليمها بعد
-          setOrders(ordersRes.filter((o: any) => o.status !== 'delivered'));
-        }
-      } catch (err) {
-        console.error("Error loading dashboard:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    checkAuth();
+    setTimeout(() => {
+      setOrders([
+        { id: "ORD-8821", customer: "أحمد محمد", address: "بيروت، الحمرا، شارع بغداد", price: "15,000 ل.ل", distance: "2.5 كم" },
+        { id: "ORD-9932", customer: "سارة علي", address: "المصيطبة، قرب مستشفى أوتيل ديو", price: "22,000 ل.ل", distance: "4.1 كم" }
+      ]);
+      setLoading(false);
+    }, 1000);
   }, []);
 
-  // تبديل حالة التوفر (متاح / مشغول)
-  const toggleAvailability = async () => {
-    const empId = document.cookie.split('; ').find(row => row.startsWith('emp_session='))?.split('=')[1];
-    await fetch('/api/employees', {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id: empId, isAvailable: !isAvailable })
-    });
-    setIsAvailable(!isAvailable);
+  const toggleOnline = () => {
+    setIsOnline(!isOnline);
+    // هنا لاحقاً نربط مع الـ API لتغيير حالة التوفر
   };
 
-  // تحديث حالة الطلب (بدء توصيل / تم التسليم)
-  const updateStatus = async (orderId: string, newStatus: string) => {
-    await fetch(`/api/orders/${orderId}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ status: newStatus })
-    });
-    // تحديث الواجهة فوراً دون إعادة تحميل الصفحة
-    setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: newStatus } : o));
+  const acceptOrder = (id: string) => {
+    alert(`تم قبول الطلب ${id}! جاري توجيهك للخريطة...`);
+    setOrders(prev => prev.filter(o => o.id !== id));
   };
-
-  // تسجيل الخروج
-  const logout = () => {
-    document.cookie = 'emp_session=; path=/; max-age=0';
-    router.push('/employee/login');
-  };
-
-  if (loading) return <div className="min-h-screen bg-gray-900 flex items-center justify-center"><p className="text-yellow-500 font-bold">جاري التحميل...</p></div>;
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white pb-20" dir="rtl">
-      {/* الهيدر العلوي */}
-      <header className="bg-gray-800 p-4 flex justify-between items-center border-b border-gray-700 sticky top-0 z-10">
+    <div className="min-h-screen bg-gray-950 text-white pb-24" dir="rtl">
+      
+      {/* 1. الهيدر العلوي */}
+      <header className="sticky top-0 z-20 bg-gray-950/90 backdrop-blur-md border-b border-gray-800 p-4 flex justify-between items-center">
         <div>
-          <h1 className="font-black text-xl text-yellow-500">🛵 لوحة السائق</h1>
-          <p className="text-xs text-gray-400">متابعة طلبات التوصيل</p>
+          <h1 className="text-xl font-black text-white">لوحة الكابتن</h1>
+          <p className="text-xs text-gray-400">مرحباً بك، كابتن يوسف 👋</p>
         </div>
-        <button onClick={logout} className="text-xs bg-red-500/20 text-red-400 px-3 py-1 rounded-lg hover:bg-red-500/30 transition">خروج</button>
+        <button onClick={() => router.push("/employee/login")} className="w-10 h-10 rounded-full bg-gray-900 border border-gray-800 flex items-center justify-center hover:bg-gray-800 transition">
+          🚪
+        </button>
       </header>
 
-      {/* زر التحكم بالتوفر */}
-      <div className="p-4">
+      {/* 2. زر التوفر الرئيسي (On/Off) */}
+      <div className="p-6">
         <button 
-          onClick={toggleAvailability} 
-          className={`w-full py-4 rounded-2xl font-black text-xl transition-all shadow-lg ${
-            isAvailable 
-              ? 'bg-green-500 text-black shadow-[0_0_20px_rgba(34,197,94,0.4)]' 
-              : 'bg-gray-700 text-gray-400 border border-gray-600'
+          onClick={toggleOnline}
+          className={`w-full py-5 rounded-2xl font-black text-2xl transition-all duration-300 shadow-lg flex items-center justify-center gap-3 ${
+            isOnline 
+              ? 'bg-green-500 text-white shadow-green-500/30 scale-[1.02]' 
+              : 'bg-gray-900 text-gray-500 border border-gray-800'
           }`}
         >
-          {isAvailable ? '🟢 أنت متاح الآن' : '🔴 أنت غير متاح'}
+          {isOnline ? (
+            <>
+              <span className="w-4 h-4 bg-white rounded-full animate-pulse" />
+              أنت متاح الآن
+            </>
+          ) : (
+            <>
+              <span className="text-2xl">🔒</span>
+              اضغط لبدء العمل
+            </>
+          )}
         </button>
+        
+        {!isOnline && (
+          <p className="text-center text-xs text-gray-600 mt-3">فعّل التوفر لاستقبال طلبات التوصيل الجديدة</p>
+        )}
       </div>
 
-      {/* قائمة الطلبات النشطة */}
+      {/* 3. قائمة الطلبات النشطة */}
       <div className="px-4 space-y-4">
-        <h2 className="text-gray-400 text-sm font-bold mr-2">الطلبات المسندة ({orders.length})</h2>
-        
-        {orders.length === 0 ? (
-          <div className="text-center py-20 text-gray-600 bg-gray-800/50 rounded-2xl border border-gray-700 border-dashed mt-4">
-            <p className="text-4xl mb-2">📭</p>
-            <p className="font-medium">ما في طلبات مسندة لك حالياً</p>
-            <p className="text-xs mt-2">انتظر حتى يقوم المدير بإسناد طلب جديد</p>
+        <div className="flex justify-between items-end mb-2">
+          <h2 className="text-lg font-bold text-gray-300">الطلبات المتاحة ({orders.length})</h2>
+          <span className="text-xs text-[var(--accent)] font-bold cursor-pointer">تحديث القائمة ↻</span>
+        </div>
+
+        {loading ? (
+          <div className="space-y-4">
+            {[1, 2].map(i => (
+              <div key={i} className="h-40 bg-gray-900 rounded-2xl animate-pulse border border-gray-800" />
+            ))}
+          </div>
+        ) : orders.length === 0 ? (
+          <div className="text-center py-16 bg-gray-900/50 rounded-3xl border border-dashed border-gray-800">
+            <span className="text-5xl mb-4 block opacity-50">📭</span>
+            <p className="text-gray-500 font-medium">لا توجد طلبات جديدة حالياً</p>
+            <p className="text-xs text-gray-600 mt-2">انتظر قليلاً أو تأكد من أنك في منطقة نشطة</p>
           </div>
         ) : (
           orders.map(order => (
-            <div key={order.id} className="bg-gray-800 rounded-2xl p-5 border border-gray-700 shadow-lg transition-transform hover:scale-[1.02]">
-              {/* رأس البطاقة */}
-              <div className="flex justify-between items-start mb-4">
-                <span className={`px-3 py-1 rounded-full text-xs font-bold border ${
-                  order.status === 'delivering' 
-                    ? 'bg-blue-500/20 text-blue-400 border-blue-500/30' 
-                    : 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30'
-                }`}>
-                  {order.status === 'delivering' ? '🚚 جاري التوصيل' : '🆕 طلب جديد'}
-                </span>
-                <span className="font-mono text-gray-500 text-xs bg-gray-900 px-2 py-1 rounded">#{order.id.slice(-6)}</span>
-              </div>
+            <div key={order.id} className="card-modern bg-gray-900 border-gray-800 !p-0 overflow-hidden group">
               
-              {/* تفاصيل الزبون */}
-              <div className="space-y-3 mb-5">
-                <div className="flex items-center gap-2">
-                  <span className="text-gray-400">👤</span>
-                  <p className="font-bold text-lg">{order.customerName}</p>
+              {/* رأس البطاقة */}
+              <div className="p-4 border-b border-gray-800 flex justify-between items-start">
+                <div>
+                  <span className="inline-block px-2 py-1 bg-blue-500/10 text-blue-400 text-xs font-bold rounded-lg mb-2">#{order.id}</span>
+                  <h3 className="font-black text-lg text-white">{order.customer}</h3>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-gray-400">📞</span>
-                  <p className="text-gray-300 font-mono" dir="ltr">{order.phone}</p>
+                <div className="text-left">
+                  <p className="text-[var(--accent)] font-black text-xl">{order.price}</p>
+                  <p className="text-xs text-gray-500 mt-1">{order.distance}</p>
                 </div>
-                <div className="flex items-start gap-2">
-                  <span className="text-gray-400 mt-1">📍</span>
-                  <p className="text-gray-300 text-sm leading-relaxed">{order.address.split('|')[0]}</p>
-                </div>
-                {order.location && (
-                  <a 
-                    href={`https://www.google.com/maps?q=${order.location}`} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 text-blue-400 text-xs bg-blue-500/10 px-3 py-1.5 rounded-lg hover:bg-blue-500/20 transition mt-1"
-                  >
-                    🔗 فتح موقع الزبون بالخريطة
-                  </a>
-                )}
               </div>
 
-              {/* أزرار الإجراءات */}
-              <div className="grid grid-cols-1 gap-3 pt-4 border-t border-gray-700">
-                {order.status === 'pending' && (
-                  <button 
-                    onClick={() => updateStatus(order.id, 'delivering')} 
-                    className="w-full bg-blue-600 hover:bg-blue-500 active:scale-95 py-3.5 rounded-xl font-bold transition-all flex items-center justify-center gap-2"
-                  >
-                    🛵 بدء التوصيل
+              {/* تفاصيل العنوان */}
+              <div className="p-4 space-y-3">
+                <div className="flex items-start gap-3">
+                  <span className="mt-1 text-gray-500">📍</span>
+                  <p className="text-gray-300 text-sm leading-relaxed">{order.address}</p>
+                </div>
+                
+                {/* أزرار الإجراءات */}
+                <div className="grid grid-cols-2 gap-3 pt-2">
+                  <button className="py-3 rounded-xl bg-gray-800 text-gray-400 font-bold text-sm hover:bg-gray-700 transition">
+                    التفاصيل
                   </button>
-                )}
-                {order.status === 'delivering' && (
                   <button 
-                    onClick={() => updateStatus(order.id, 'delivered')} 
-                    className="w-full bg-green-600 hover:bg-green-500 active:scale-95 py-3.5 rounded-xl font-bold transition-all flex items-center justify-center gap-2"
+                    onClick={() => acceptOrder(order.id)}
+                    className="py-3 rounded-xl bg-[var(--primary)] text-white font-black text-sm hover:bg-[var(--primary-dark)] transition shadow-lg shadow-blue-900/20 active:scale-95"
                   >
-                    ✅ تأكيد التسليم
+                    قبول الطلب ✓
                   </button>
-                )}
+                </div>
               </div>
             </div>
           ))
         )}
       </div>
+
+      {/* شريط تنقل سفلي ثابت (Bottom Navigation) */}
+      <nav className="fixed bottom-0 left-0 right-0 bg-gray-950 border-t border-gray-800 px-6 py-3 flex justify-around items-center z-30 pb-safe">
+        <button className="flex flex-col items-center gap-1 text-[var(--primary)]">
+          <span className="text-xl">🏠</span>
+          <span className="text-[10px] font-bold">الرئيسية</span>
+        </button>
+        <button className="flex flex-col items-center gap-1 text-gray-600 hover:text-gray-400 transition">
+          <span className="text-xl">📊</span>
+          <span className="text-[10px] font-bold">إحصائياتي</span>
+        </button>
+        <button className="flex flex-col items-center gap-1 text-gray-600 hover:text-gray-400 transition">
+          <span className="text-xl">⚙️</span>
+          <span className="text-[10px] font-bold">الإعدادات</span>
+        </button>
+      </nav>
+
     </div>
   );
 }

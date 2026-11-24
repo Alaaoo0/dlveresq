@@ -1,193 +1,141 @@
-"use client";
-
-import { useState, useEffect } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 
-export default function AdminPage() {
-  const [products, setProducts] = useState<any[]>([]);
-  const [stats, setStats] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-  const [importing, setImporting] = useState(false);
-  const router = useRouter();
+export default function AdminDashboard() {
+  // بيانات وهمية للإحصائيات (لاحقاً نجيبها من الـ API)
+  const stats = [
+    { 
+      title: "إجمالي الطلبات", 
+      value: "1,248", 
+      change: "+12%", 
+      isPositive: true, 
+      icon: "📦", 
+      color: "bg-blue-50 text-blue-600 border-blue-100" 
+    },
+    { 
+      title: "الإيرادات اليوم", 
+      value: "$3,450", 
+      change: "+8%", 
+      isPositive: true, 
+      icon: "💰", 
+      color: "bg-green-50 text-green-600 border-green-100" 
+    },
+    { 
+      title: "السائقين المتاحين", 
+      value: "18", 
+      change: "-2", 
+      isPositive: false, 
+      icon: "🏍️", 
+      color: "bg-purple-50 text-purple-600 border-purple-100" 
+    },
+    { 
+      title: "طلبات قيد الانتظار", 
+      value: "7", 
+      change: "عاجل", 
+      isPositive: false, 
+      icon: "⏳", 
+      color: "bg-orange-50 text-orange-600 border-orange-100" 
+    },
+  ];
 
-  const fetchData = () => {
-    Promise.all([
-      fetch("/api/products").then(res => res.json()),
-      fetch("/api/admin/stats", { cache: 'no-store' }).then(res => res.json())
-    ]).then(([productsData, statsData]) => {
-      setProducts(productsData);
-      setStats(statsData);
-      setLoading(false);
-    });
-  };
-
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  const handleDelete = async (id: string) => {
-    if (!confirm("متأكد إنك بدك تحذف هالمنتج؟")) return;
-    await fetch(`/api/products/${id}`, { method: "DELETE" });
-    setProducts(products.filter((p) => p.id !== id));
-  };
-
-  const handleCsvUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    setImporting(true);
-    const formData = new FormData();
-    formData.append("file", file);
-
-    try {
-      const res = await fetch("/api/import", { method: "POST", body: formData });
-      const data = await res.json();
-      if (res.ok) {
-        alert(data.message);
-        fetchData();
-      } else {
-        alert(data.message);
-      }
-    } catch (error) {
-      alert("خطأ في الاتصال");
-    }
-    setImporting(false);
-    e.target.value = '';
-  };
-
-  const handleLogout = async () => {
-    await fetch("/api/admin/logout", { method: "POST" });
-    router.push("/admin/login");
-    router.refresh();
-  };
-
-  if (loading) return <p className="text-center mt-20 text-black font-bold">جاري تحميل لوحة التحكم...</p>;
+  const recentOrders = [
+    { id: "#ORD-8821", customer: "أحمد محمد", status: "تم التسليم", price: "$15.00", time: "منذ 5 دقائق" },
+    { id: "#ORD-8820", customer: "سارة علي", status: "جاري التوصيل", price: "$22.50", time: "منذ 12 دقيقة" },
+    { id: "#ORD-8819", customer: "يوسف حسن", status: "قيد التحضير", price: "$8.00", time: "منذ 20 دقيقة" },
+    { id: "#ORD-8818", customer: "نور الدين", status: "جديد", price: "$45.00", time: "منذ 25 دقيقة" },
+  ];
 
   return (
-    <div className="max-w-6xl mx-auto p-6" dir="rtl">
-      <div className="flex flex-wrap justify-between items-center mb-8 gap-4">
-        <div className="flex items-center gap-4">
-          <h1 className="text-3xl font-bold text-red-600">إدارة المتجر</h1>
-          <button onClick={handleLogout} className="bg-red-100 text-red-600 px-3 py-1 rounded-lg text-sm font-bold hover:bg-red-200 transition-colors">
-            خروج
-          </button>
+    <div className="min-h-screen bg-[var(--background)] p-6 md:p-10" dir="rtl">
+      
+      {/* 1. الهيدر والترحيب */}
+      <header className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-4">
+        <div>
+          <h1 className="text-3xl font-black text-[var(--text-main)]">لوحة التحكم</h1>
+          <p className="text-[var(--text-muted)] mt-1">مرحباً بك، إليك ملخص أداء المتجر اليوم</p>
         </div>
+        
+        <div className="flex gap-3">
+          <Link href="/admin/employees" className="btn-primary flex items-center gap-2 !py-2.5 !px-5">
+            <span>👥</span> إدارة الموظفين
+          </Link>
+          <Link href="/admin/orders" className="bg-white border border-gray-200 text-[var(--text-main)] font-bold py-2.5 px-5 rounded-[1rem] hover:bg-gray-50 transition-colors flex items-center gap-2 shadow-sm">
+            <span>📋</span> كل الطلبات
+          </Link>
+        </div>
+      </header>
 
-        <div className="flex flex-wrap gap-2">
-          <Link href="/admin/orders" className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700">
-            📦 الطلبات
-          </Link>
-          <Link href="/admin/employees" className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700">
-            👥 الموظفين
-          </Link>
-          <Link href="/admin/coupons" className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
-            🎟️ الكوبونات
-          </Link>
-          <Link href="/admin/categories" className="bg-teal-600 text-white px-4 py-2 rounded-lg hover:bg-teal-700">
-            📁 إدارة الأقسام
-          </Link>
-          <Link href="/admin/wallet" className="bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700">
-            💳 المحفظة
-          </Link>
-          <Link href="/admin/notifications" className="bg-yellow-500 text-white px-4 py-2 rounded-lg hover:bg-yellow-600">
-            🔔 الإشعارات
-          </Link>
-          <Link href="/admin/settings" className="bg-gray-800 text-white px-4 py-2 rounded-lg hover:bg-gray-900">
-            ⚙️ الإعدادات
-          </Link>
-          <Link href="/admin/add" className="bg-black text-white px-4 py-2 rounded-lg hover:bg-gray-800">
-            + إضافة منتج جديد
-          </Link>
-          
-          <label className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 cursor-pointer flex items-center justify-center">
-            {importing ? "جاري الاستيراد..." : "📥 استيراد CSV"}
-            <input type="file" accept=".csv" onChange={handleCsvUpload} className="hidden" />
-          </label>
-        </div>
+      {/* 2. بطاقات الإحصائيات السريعة */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+        {stats.map((stat, i) => (
+          <div key={i} className={`card-modern !p-6 border ${stat.color.replace('text-', 'border-').split(' ')[2]} relative overflow-hidden group`}>
+            <div className="flex justify-between items-start mb-4">
+              <div className={`w-12 h-12 rounded-xl ${stat.color.split(' ')[0]} ${stat.color.split(' ')[1]} flex items-center justify-center text-2xl shadow-sm`}>
+                {stat.icon}
+              </div>
+              <span className={`text-xs font-bold px-2 py-1 rounded-full ${
+                stat.isPositive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+              }`}>
+                {stat.change}
+              </span>
+            </div>
+            
+            <h3 className="text-3xl font-black text-[var(--text-main)] mb-1">{stat.value}</h3>
+            <p className="text-sm font-medium text-[var(--text-muted)]">{stat.title}</p>
+            
+            {/* تأثير زخرفي خفيف عند التحويم */}
+            <div className="absolute -bottom-4 -left-4 w-24 h-24 bg-current opacity-5 rounded-full blur-2xl group-hover:scale-150 transition-transform duration-500" />
+          </div>
+        ))}
       </div>
 
-      {stats && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-          <div className="bg-white rounded-xl shadow-sm p-6 border-r-4 border-green-500">
-            <h3 className="text-gray-500 text-sm font-bold mb-2">إجمالي المبيعات</h3>
-            <p className="text-3xl font-black text-gray-900">${((stats.totalSales || 0) / 100).toFixed(2)}</p>
-          </div>
-          <div className="bg-white rounded-xl shadow-sm p-6 border-r-4 border-blue-500">
-            <h3 className="text-gray-500 text-sm font-bold mb-2">إجمالي الطلبات</h3>
-            <p className="text-3xl font-black text-gray-900">{stats.totalOrders || 0}</p>
-          </div>
-          <div className="bg-white rounded-xl shadow-sm p-6 border-r-4 border-orange-500">
-            <h3 className="text-gray-500 text-sm font-bold mb-2">إجمالي المنتجات</h3>
-            <p className="text-3xl font-black text-gray-900">{stats.totalProducts || 0}</p>
-          </div>
+      {/* 3. جدول الطلبات الأخيرة */}
+      <section>
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-xl font-black text-[var(--text-main)] flex items-center gap-2">
+            <span>🕒</span> آخر الطلبات الواردة
+          </h2>
+          <Link href="/admin/orders" className="text-sm font-bold text-[var(--primary)] hover:underline">
+            عرض الكل ←
+          </Link>
         </div>
-      )}
 
-      {stats?.recentOrders && stats.recentOrders.length > 0 && (
-        <div className="bg-white rounded-lg shadow-md mb-10 overflow-hidden border border-gray-100">
-          <div className="p-4 bg-gray-50 border-b flex justify-between items-center">
-            <h2 className="text-lg font-bold text-gray-800">آخر الطلبات</h2>
-            <Link href="/admin/orders" className="text-sm text-blue-600 font-semibold hover:underline">مشاهدة الكل</Link>
-          </div>
-          <table className="w-full text-right border-collapse">
-            <thead className="text-gray-600 text-sm">
-              <tr>
-                <th className="p-4 border-b">اسم الزبون</th>
-                <th className="p-4 border-b">الهاتف</th>
-                <th className="p-4 border-b">المجموع</th>
-                <th className="p-4 border-b">التاريخ</th>
-              </tr>
-            </thead>
-            <tbody>
-              {stats.recentOrders.slice(0, 5).map((order: any) => (
-                <tr key={order.id} className="hover:bg-gray-50">
-                  <td className="p-4 border-b font-semibold text-gray-800">{order.customerName}</td>
-                  <td className="p-4 border-b text-gray-600" dir="ltr">{order.phone}</td>
-                  <td className="p-4 border-b text-red-600 font-bold">${(order.total / 100).toFixed(2)}</td>
-                  <td className="p-4 border-b text-gray-500 text-sm">{new Date(order.createdAt).toLocaleDateString('ar-LB')}</td>
+        <div className="card-modern !p-0 overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-right">
+              <thead className="bg-gray-50 border-b border-gray-100">
+                <tr>
+                  <th className="py-4 px-6 text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">رقم الطلب</th>
+                  <th className="py-4 px-6 text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">الزبون</th>
+                  <th className="py-4 px-6 text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">الحالة</th>
+                  <th className="py-4 px-6 text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">المبلغ</th>
+                  <th className="py-4 px-6 text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">الوقت</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {recentOrders.map((order, i) => (
+                  <tr key={i} className="hover:bg-gray-50/50 transition-colors group cursor-pointer">
+                    <td className="py-4 px-6 font-mono font-bold text-[var(--primary)]">{order.id}</td>
+                    <td className="py-4 px-6 font-medium text-[var(--text-main)]">{order.customer}</td>
+                    <td className="py-4 px-6">
+                      <span className={`text-xs font-bold px-3 py-1 rounded-full ${
+                        order.status === 'تم التسليم' ? 'bg-green-100 text-green-700' :
+                        order.status === 'جاري التوصيل' ? 'bg-blue-100 text-blue-700' :
+                        order.status === 'قيد التحضير' ? 'bg-orange-100 text-orange-700' :
+                        'bg-gray-100 text-gray-700'
+                      }`}>
+                        {order.status}
+                      </span>
+                    </td>
+                    <td className="py-4 px-6 font-black text-[var(--text-main)]">{order.price}</td>
+                    <td className="py-4 px-6 text-sm text-[var(--text-muted)]">{order.time}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
-      )}
+      </section>
 
-      <h2 className="text-xl font-bold text-gray-800 mb-4">المنتجات</h2>
-      <div className="bg-white rounded-lg shadow-md overflow-hidden border border-gray-100">
-        <table className="w-full text-right border-collapse">
-          <thead className="bg-gray-100 text-gray-600">
-            <tr>
-              <th className="p-4 border-b">الصورة</th>
-              <th className="p-4 border-b">الاسم</th>
-              <th className="p-4 border-b">السعر</th>
-              <th className="p-4 border-b">المخزون</th>
-              <th className="p-4 border-b">الخيارات</th>
-            </tr>
-          </thead>
-          <tbody>
-            {products.map((product) => (
-              <tr key={product.id} className="hover:bg-gray-50">
-                <td className="p-4 border-b">
-                  {product.imageUrl ? (
-                    <img src={product.imageUrl} alt={product.name} className="w-12 h-12 object-cover rounded" />
-                  ) : (
-                    <div className="w-12 h-12 bg-gray-200 rounded"></div>
-                  )}
-                </td>
-                <td className="p-4 border-b font-semibold text-gray-800">{product.name}</td>
-                <td className="p-4 border-b text-green-600">${(product.price / 100).toFixed(2)}</td>
-                <td className="p-4 border-b text-gray-800">{product.stock}</td>
-                <td className="p-4 border-b flex gap-4">
-                  <Link href={`/admin/edit/${product.id}`} className="text-blue-600 hover:underline">تعديل</Link>
-                  <button onClick={() => handleDelete(product.id)} className="text-red-600 hover:underline">حذف</button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        {products.length === 0 && <p className="text-center p-6 text-gray-500">ما في منتجات حالياً.</p>}
-      </div>
     </div>
   );
 }

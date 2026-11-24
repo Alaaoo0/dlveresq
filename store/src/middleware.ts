@@ -1,20 +1,13 @@
-import { NextResponse } from 'next/server'
-import type { NextRequest } from 'next/server'
-
-export function middleware(request: NextRequest) {
-  const isAdmin = request.cookies.get('admin_session')?.value === 'true'
-  
-  // إذا كان داخل على أي صفحة من صفحات الأدمن (إلا صفحة دخول الأدمن)
-  if (request.nextUrl.pathname.startsWith('/admin') && request.nextUrl.pathname !== '/admin/login') {
-    if (!isAdmin) {
-      // طرده على صفحة دخول الأدمن
-      return NextResponse.redirect(new URL('/admin/login', request.url))
-    }
-  }
-  
-  return NextResponse.next()
-}
+export { auth as middleware } from "@/lib/auth";
 
 export const config = {
-  matcher: ['/admin/:path*'],
-}
+  matcher: [
+    "/",              // الصفحة الرئيسية محمية
+    "/products/:path*", // كل صفحات المنتجات محمية
+    "/cart",          // السلة محمية
+    "/checkout",      // الدفع محمي
+    "/profile",       // البروفايل محمي
+    // استثناءات: الصفحات المسموح للجميع بدخولها
+    "/((?!api|_next/static|_next/image|favicon.ico|login|register|admin|employee).*)",
+  ],
+};

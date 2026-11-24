@@ -104,12 +104,13 @@ model DeliveryZone {
 model Employee {
   id          String   @id @default(cuid())
   name        String
-  phone       String
+  phone       String   @unique // مهم عشان يكون هو اسم المستخدم
+  password    String?  // 👈 الحقل الجديد لكلمة السر
   position    String
   address     String?
   isAvailable Boolean  @default(true)
   createdAt   DateTime @default(now())
-  orders      Order[]  // 👈 ربط عكسي مع الطلبات
+  orders      Order[]
 }
 
 model PushSubscription {

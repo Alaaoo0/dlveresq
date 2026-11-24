@@ -1,65 +1,71 @@
 "use client";
-import { useState } from "react";
+
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 
-export default function AdminLogin() {
+export default function AdminLoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
+  // ✅ التحقق تلقائياً إذا كان المدير مسجل دخول سابقاً
+  useEffect(() => {
+    const isAdminLoggedIn = document.cookie.includes('admin_session=true');
+    if (isAdminLoggedIn) {
+      router.push("/admin");
+    }
+  }, [router]);
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError("");
     setLoading(true);
+    setError("");
 
-    try {
-      const res = await fetch("/api/admin/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ password }),
-      });
-      
-      const data = await res.json();
+    // ⚠️ غيّر "123456" لكلمة السر اللي بدك ياها للمدير
+    const ADMIN_PASSWORD = "123456"; 
 
-      if (res.ok) {
-        router.push("/admin");
-        router.refresh();
-      } else {
-        setError(data.message || "كلمة المرور غلط!");
-      }
-    } catch (err) {
-      setError("صار خطأ بالاتصال بالسيرفر.");
+    if (password === ADMIN_PASSWORD) {
+      // حفظ الجلسة لمدة 30 يوم
+      document.cookie = `admin_session=true; path=/; max-age=${60 * 60 * 24 * 30}; SameSite=Strict`;
+      router.push("/admin");
+      router.refresh();
+    } else {
+      setError("كلمة المرور غير صحيحة!");
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50" dir="rtl">
-      <div className="bg-white p-8 rounded-2xl shadow-lg w-full max-w-sm border border-gray-100">
-        <div className="text-center mb-6">
-          <div className="w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center text-3xl mx-auto mb-4">🔒</div>
-          <h1 className="text-2xl font-bold text-gray-900">دخول الإدارة</h1>
-          <p className="text-sm text-gray-500 mt-1">أدخل كلمة المرور للوصول للوحة التحكم</p>
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4" dir="rtl">
+      <div className="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md border border-gray-100 text-center">
+        <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl">
+          🔒
         </div>
-        
+        <h1 className="text-2xl font-black text-gray-900 mb-2">دخول الإدارة</h1>
+        <p className="text-gray-500 text-sm mb-6">أدخل كلمة المرور للوصول للوحة التحكم</p>
+
+        {error && (
+          <div className="bg-red-50 text-red-600 p-3 rounded-lg mb-4 text-sm font-bold border border-red-100">
+            {error}
+          </div>
+        )}
+
         <form onSubmit={handleLogin} className="space-y-4">
           <input
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            placeholder="كلمة المرور"
-            className="w-full border-2 border-gray-200 p-3 rounded-xl text-black focus:border-red-500 outline-none transition-colors text-center tracking-widest"
-            dir="ltr"
+            className="w-full border border-gray-300 p-4 rounded-xl text-center text-lg tracking-widest focus:ring-2 focus:ring-red-500 outline-none transition-all"
+            placeholder="••••••"
             required
+            autoFocus
           />
           
-          {error && <p className="text-red-500 text-sm font-bold text-center bg-red-50 p-2 rounded-lg">{error}</p>}
-          
-          <button 
-            type="submit" 
+          <button
+            type="submit"
             disabled={loading}
-            className="w-full bg-black text-white p-3 rounded-xl font-bold hover:bg-gray-800 disabled:bg-gray-400 transition-colors"
+            className="w-full bg-black text-white font-bold py-4 rounded-xl hover:bg-gray-800 transition-all disabled:bg-gray-400 disabled:cursor-not-allowed text-lg"
           >
             {loading ? "جاري التحقق..." : "دخول"}
           </button>

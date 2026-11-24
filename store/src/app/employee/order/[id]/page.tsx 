@@ -1,0 +1,147 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import { useRouter, useParams } from "next/navigation";
+import dynamic from "next/dynamic";
+
+// تحميل الخريطة بشكل ديناميكي
+const MapComponent = dynamic(() => import("@/components/MapPicker"), { 
+  ssr: false,
+  loading: () => <div className="absolute inset-0 bg-gray-900 animate-pulse" /> 
+});
+
+export default function DriverOrderTrackingPage() {
+  const params = useParams();
+  const router = useRouter();
+  const [status, setStatus] = useState<"accepted" | "arrived_restaurant" | "delivering" | "delivered">("accepted");
+  
+  // بيانات وهمية للطلب (لاحقاً نجيبها من الـ API بناءً على params.id)
+  const orderData = {
+    id: params.id,
+    customer: "أحمد محمد",
+    phone: "70123456",
+    address: "بيروت، الحمرا، شارع بغداد، بناء النور ط3",
+    price: "15,000 ل.ل",
+    restaurant: "برجر كينغ - بيروت",
+    lat: 33.8938,
+    lng: 35.5018
+  };
+
+  const updateStatus = (newStatus: typeof status) => {
+    setStatus(newStatus);
+    // هنا لاحقاً نرسل تحديث الحالة للسيرفر
+  };
+
+  return (
+    <div className="relative h-screen w-full bg-gray-950 text-white overflow-hidden flex flex-col" dir="rtl">
+      
+      {/* 1. الخريطة الكاملة بالخلفية */}
+      <div className="absolute inset-0 z-0">
+        <MapComponent 
+          centerLat={orderData.lat} 
+          centerLng={orderData.lng} 
+          height="h-full" 
+          showStoreMarker={true}
+          onLocationSelect={() => {}} // دالة فارغة لأن السائق مش بدو يحدد موقع بهالشاشة
+        />
+        {/* تدرج أسود خفيف فوق الخريطة عشان الأزرار والنص يبانوا */}
+        <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-gray-950 via-gray-950/80 to-transparent pointer-events-none" />
+      </div>
+
+      {/* 2. شريط علوي عائم */}
+      <div className="absolute top-0 left-0 right-0 z-20 p-4 flex justify-between items-start bg-gradient-to-b from-gray-950/90 to-transparent">
+        <button onClick={() => router.back()} className="w-10 h-10 rounded-full bg-gray-900/80 backdrop-blur border border-gray-700 flex items-center justify-center hover:bg-gray-800 transition">
+          ←
+        </button>
+        
+        <div className="bg-gray-900/80 backdrop-blur px-4 py-2 rounded-full border border-gray-700 shadow-lg">
+          <span className="text-xs font-bold text-[var(--accent)] uppercase tracking-wider">طلب #{orderData.id}</span>
+        </div>
+
+        <a href={`tel:${orderData.phone}`} className="w-10 h-10 rounded-full bg-green-600 flex items-center justify-center shadow-lg hover:bg-green-500 transition animate-pulse">
+          📞
+        </a>
+      </div>
+
+      {/* 3. البطاقة السفلية للتفاصيل والأزرار */}
+      <div className="relative z-10 mt-auto bg-gray-900 rounded-t-3xl p-6 pb-8 border-t border-gray-800 shadow-2xl space-y-5">
+        
+        {/* حالة الطلب الحالية */}
+        <div className="flex items-center justify-between mb-2">
+          <h2 className="text-xl font-black text-white">
+            {status === 'accepted' && 'في الطريق للمطعم'}
+            {status === 'arrived_restaurant' && 'استلمت الطلب'}
+            {status === 'delivering' && 'في الطريق للزبون'}
+            {status === 'delivered' && 'تم التسليم بنجاح 🎉'}
+          </h2>
+          <span className="text-[var(--accent)] font-black text-lg">{orderData.price}</span>
+        </div>
+
+        {/* تفاصيل العنوان */}
+        <div className="space-y-3 bg-gray-950/50 p-4 rounded-2xl border border-gray-800">
+          <div className="flex items-start gap-3">
+            <div className="mt-1 w-2 h-2 rounded-full bg-[var(--primary)] shrink-0" />
+            <div>
+              <p className="text-xs text-gray-500 font-bold uppercase mb-1">المطعم</p>
+              <p className="text-sm text-gray-300 font-medium">{orderData.restaurant}</p>
+            </div>
+          </div>
+          
+          <div className="w-px h-4 bg-gray-800 mr-1" />
+
+          <div className="flex items-start gap-3">
+            <div className="mt-1 w-2 h-2 rounded-full bg-[var(--success)] shrink-0" />
+            <div>
+              <p className="text-xs text-gray-500 font-bold uppercase mb-1">وجهة التوصيل</p>
+              <p className="text-sm text-white font-bold leading-relaxed">{orderData.address}</p>
+              <p className="text-xs text-gray-400 mt-1 flex items-center gap-1">👤 {orderData.customer}</p>
+            </div>
+          </div>
+        </div>
+
+        {/* الأزرار الضخمة للإجراءات */}
+        <div className="grid grid-cols-1 gap-3 pt-2">
+          {status === 'accepted' && (
+            <button 
+              onClick={() => updateStatus('arrived_restaurant')}
+              className="btn-primary w-full py-4 text-lg flex items-center justify-center gap-2"
+            >
+              <span>وصلت للمطعم</span>
+              <span>🏪</span>
+            </button>
+          )}
+
+          {status === 'arrived_restaurant' && (
+            <button 
+              onClick={() => updateStatus('delivering')}
+              className="btn-accent w-full py-4 text-lg flex items-center justify-center gap-2"
+            >
+              <span>استلمت الطلب - ابدأ التوصيل</span>
+              <span>🛵</span>
+            </button>
+          )}
+
+          {status === 'delivering' && (
+            <button 
+              onClick={() => updateStatus('delivered')}
+              className="w-full py-4 bg-[var(--success)] hover:bg-emerald-600 text-white font-black rounded-[1rem] transition-all active:scale-95 shadow-lg shadow-green-900/20 text-lg flex items-center justify-center gap-2"
+            >
+              <span>تم تسليم الطلب للزبون</span>
+              <span>✅</span>
+            </button>
+          )}
+
+          {status === 'delivered' && (
+            <button 
+              onClick={() => router.push("/employee")}
+              className="w-full py-4 bg-gray-800 hover:bg-gray-700 text-white font-bold rounded-[1rem] transition-all text-lg"
+            >
+              العودة للقائمة الرئيسية
+            </button>
+          )}
+        </div>
+
+      </div>
+    </div>
+  );
+}

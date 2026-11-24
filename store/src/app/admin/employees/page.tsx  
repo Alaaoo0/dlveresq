@@ -1,0 +1,94 @@
+"use client";
+import { useState } from "react";
+import Link from "next/link";
+
+export default function AdminEmployeesPage() {
+  const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState("");
+
+  const handleAddEmployee = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setMessage("");
+    
+    try {
+      // ⚠️ انتبه: الرابط هنا /api/employee (بدون s) عشان يطابق مجلدك
+      const res = await fetch("/api/employee", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, phone, password }),
+      });
+      
+      const data = await res.json();
+      
+      if (res.ok) {
+        setMessage("✅ تم إضافة الموظف بنجاح!");
+        setName(""); setPhone(""); setPassword("");
+      } else {
+        setMessage(`❌ ${data.error}`);
+      }
+    } catch (err) {
+      setMessage("❌ حدث خطأ في الاتصال بالسيرفر");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50 p-6" dir="rtl">
+      <div className="max-w-md mx-auto bg-white rounded-xl shadow-lg p-6 border border-gray-100">
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-2xl font-black text-gray-900">إضافة موظف</h1>
+          <Link href="/admin" className="text-sm text-blue-600 hover:underline">← رجوع للإدارة</Link>
+        </div>
+        
+        {message && (
+          <div className={`p-3 rounded-lg mb-4 text-sm text-center font-bold ${
+            message.includes('✅') ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'
+          }`}>
+            {message}
+          </div>
+        )}
+
+        <form onSubmit={handleAddEmployee} className="space-y-4">
+          <input 
+            type="text" 
+            value={name} 
+            onChange={(e) => setName(e.target.value)} 
+            placeholder="اسم الموظف" 
+            required 
+            className="w-full border p-3 rounded-lg" 
+          />
+          <input 
+            type="tel" 
+            value={phone} 
+            onChange={(e) => setPhone(e.target.value)} 
+            placeholder="رقم الهاتف" 
+            required 
+            dir="ltr"
+            className="w-full border p-3 rounded-lg text-left" 
+          />
+          <input 
+            type="password" 
+            value={password} 
+            onChange={(e) => setPassword(e.target.value)} 
+            placeholder="كلمة السر" 
+            required 
+            className="w-full border p-3 rounded-lg" 
+          />
+          
+          <button 
+            type="submit" 
+            disabled={loading} 
+            className="w-full bg-green-600 text-white font-bold py-3 rounded-lg hover:bg-green-700 disabled:bg-gray-400"
+          >
+            {loading ? "جاري الحفظ..." : "حفظ الموظف"}
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+}
